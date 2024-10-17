@@ -14,7 +14,7 @@ from omni.isaac.lab_assets.unitree import K1GO1_CFG  # isort: skip
 
 
 @configclass
-class K1Go1RoughEnvCfg(LocomanipulationReachRoughEnvCfg):
+class K1Go1ReachRoughEnvCfg(LocomanipulationReachRoughEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
@@ -27,12 +27,19 @@ class K1Go1RoughEnvCfg(LocomanipulationReachRoughEnvCfg):
         self.scene.terrain.terrain_generator.sub_terrains["random_rough"].noise_step = 0.01
 
         # reduce action scale
-        self.actions.joint_pos.scale = 0.25
+        #self.actions.leg_joint_pos.scale = 0.25
 
         # event
         self.events.push_robot = None
-        self.events.add_base_mass.params["mass_distribution_params"] = (-1.0, 3.0)
+
+        self.events.add_base_mass.params["mass_distribution_params"] = (-1.0, 1.0)
         self.events.add_base_mass.params["asset_cfg"].body_names = "trunk"
+        self.events.add_base_mass = None
+
+        self.events.add_arm_payload.params["mass_distribution_params"] = (0.0, 0.1)
+        self.events.add_arm_payload.params["asset_cfg"].body_names = ".*link_grasping_frame"
+        self.events.add_arm_payload = None
+        
         self.events.base_external_force_torque.params["asset_cfg"].body_names = "trunk"
         self.events.reset_robot_joints.params["position_range"] = (1.0, 1.0)
         self.events.reset_base.params = {
@@ -48,20 +55,13 @@ class K1Go1RoughEnvCfg(LocomanipulationReachRoughEnvCfg):
         }
 
         # rewards
-        self.rewards.feet_air_time.params["sensor_cfg"].body_names = ".*_foot"
-        self.rewards.feet_air_time.weight = 0.01
-        self.rewards.undesired_contacts = None
-        self.rewards.dof_torques_l2.weight = -0.0002
-        self.rewards.track_lin_vel_xy_exp.weight = 1.5
-        self.rewards.track_ang_vel_z_exp.weight = 0.75
-        self.rewards.dof_acc_l2.weight = -2.5e-7
-
+        # self.rewards.undesired_contacts = None
         # terminations
-        self.terminations.base_contact.params["sensor_cfg"].body_names = "trunk"
+        # self.terminations.base_contact.params["sensor_cfg"].body_names = "trunk"
 
 
 @configclass
-class K1eGo1RoughEnvCfg_PLAY(K1Go1RoughEnvCfg):
+class K1Go1ReachRoughEnvCfg_PLAY(K1Go1ReachRoughEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()

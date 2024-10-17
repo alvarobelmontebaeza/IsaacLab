@@ -5,18 +5,14 @@
 
 from omni.isaac.lab.utils import configclass
 
-from .rough_env_cfg import K1Go1RoughEnvCfg
+from .rough_env_cfg import K1Go1ReachRoughEnvCfg
 
 
 @configclass
-class K1Go1FlatEnvCfg(K1Go1RoughEnvCfg):
+class K1Go1ReachFlatEnvCfg(K1Go1ReachRoughEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
-
-        # override rewards
-        self.rewards.flat_orientation_l2.weight = -2.5
-        self.rewards.feet_air_time.weight = 0.25
 
         # change terrain to flat
         self.scene.terrain.terrain_type = "plane"
@@ -28,7 +24,7 @@ class K1Go1FlatEnvCfg(K1Go1RoughEnvCfg):
         self.curriculum.terrain_levels = None
 
 
-class K1Go1FlatEnvCfg_PLAY(K1Go1FlatEnvCfg):
+class K1Go1ReachFlatEnvCfg_PLAY(K1Go1ReachFlatEnvCfg):
     def __post_init__(self) -> None:
         # post init of parent
         super().__post_init__()
