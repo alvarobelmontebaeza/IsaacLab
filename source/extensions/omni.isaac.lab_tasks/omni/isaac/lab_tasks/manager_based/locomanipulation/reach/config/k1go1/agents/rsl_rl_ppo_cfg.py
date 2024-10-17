@@ -13,11 +13,11 @@ from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import (
 
 
 @configclass
-class K1Go1RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+class K1Go1ReachRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
-    max_iterations = 1500
-    save_interval = 50
-    experiment_name = "k1go1_rough"
+    max_iterations = 40000
+    save_interval = 100
+    experiment_name = "k1go1_reach_rough"
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=1.0,
@@ -29,10 +29,10 @@ class K1Go1RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         value_loss_coef=1.0,
         use_clipped_value_loss=True,
         clip_param=0.2,
-        entropy_coef=0.01,
+        entropy_coef=0.001,
         num_learning_epochs=5,
         num_mini_batches=4,
-        learning_rate=1.0e-3,
+        learning_rate=2e-4,
         schedule="adaptive",
         gamma=0.99,
         lam=0.95,
@@ -42,11 +42,11 @@ class K1Go1RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
 
 
 @configclass
-class K1Go1FlatPPORunnerCfg(K1Go1RoughPPORunnerCfg):
+class K1Go1ReachFlatPPORunnerCfg(K1Go1ReachRoughPPORunnerCfg):
     def __post_init__(self):
         super().__post_init__()
 
-        self.max_iterations = 300
-        self.experiment_name = "k1go1_flat"
-        self.policy.actor_hidden_dims = [128, 128, 128]
-        self.policy.critic_hidden_dims = [128, 128, 128]
+        self.max_iterations = 2500
+        self.experiment_name = "k1go1_reach_flat"
+        #self.policy.actor_hidden_dims = [128, 128, 128]
+        #self.policy.critic_hidden_dims = [128, 128, 128]
