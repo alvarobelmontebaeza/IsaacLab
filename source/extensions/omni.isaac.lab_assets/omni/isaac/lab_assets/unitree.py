@@ -150,7 +150,7 @@ K1GO1_CFG = ArticulationCfg(
         ),
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, 0.4),
+        pos=(0.0, 0.0, 0.35),
         joint_pos={
             ".*L_hip_joint": 0.1,
             ".*R_hip_joint": -0.1,
@@ -164,14 +164,12 @@ K1GO1_CFG = ArticulationCfg(
     soft_joint_pos_limit_factor=0.9,
     actuators={
         "base_legs": GO1_ACTUATOR_CFG,
-        "arm_joints": DCMotorCfg(
+        "arm_joints": ImplicitActuatorCfg(
             joint_names_expr=[".*K1.*"],
             effort_limit=None, # Keep default value in USD file
-            saturation_effort=8.33, # Keep default value in USD file
             velocity_limit=3.14,
-            stiffness=5.0,
-            damping=0.5,
-            friction=0.0,
+            stiffness=15.0,
+            damping=5.0,
         ),
     },
 )
