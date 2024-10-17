@@ -90,27 +90,30 @@ class MySceneCfg(InteractiveSceneCfg):
 @configclass
 class CommandsCfg:
     """Command specifications for the MDP."""
-
-    base_velocity = mdp.UniformVelocityCommandCfg(
+    # We sample a desired pose for the end-effector of the robot arm and code it as the keypoints (vertex coordinates)
+    # of a cube centered at the desired pose.
+    ee_pose = mdp.UniformPoseWorldCommandCfg(
         asset_name="robot",
-        resampling_time_range=(10.0, 10.0),
-        rel_standing_envs=0.02,
-        rel_heading_envs=1.0,
-        heading_command=True,
-        heading_control_stiffness=0.5,
-        debug_vis=True,
-        ranges=mdp.UniformVelocityCommandCfg.Ranges(
-            lin_vel_x=(-1.0, 1.0), lin_vel_y=(-1.0, 1.0), ang_vel_z=(-1.0, 1.0), heading=(-math.pi, math.pi)
+        body_name=".*link_grasping_frame", # Virtual EE frame at the end of the robot arm
+        resampling_time_range=(4.0, 4.0),
+        ranges=mdp.UniformPoseWorldCommandCfg.Ranges(
+            pos_x=(0.2, 1.0),
+            pos_y=(-0.2, 0.2),
+            pos_z=(-0.3, 0.1),
+            roll=(0.0, 0.0),
+            pitch=(-math.pi * 0.25, math.pi * 0.5),
+            yaw=(-math.pi * 0.5, math.pi * 0.5),
         ),
+        debug_vis=True,
     )
-
+    # TODO: Maybe add desired base pose, for now only EE pose is used
 
 @configclass
 class ActionsCfg:
     """Action specifications for the MDP."""
-
-    joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*"], scale=0.5, use_default_offset=True)
-
+    # Output target joint positions for both the arm and the leg joints
+    leg_joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*hip_joint", ".*_thigh_joint", ".*calf_joint"], scale=0.25, use_default_offset=True)
+    arm_joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*K1.*"], scale=0.25, use_default_offset=True)
 
 @configclass
 class ObservationsCfg:
@@ -121,13 +124,13 @@ class ObservationsCfg:
         """Observations for policy group."""
 
         # observation terms (order preserved)
+        base_pos_w = ObsTerm(func=mdp.root_pos_w, noise=Unoise(n_min=-0.05, n_max=0.05))
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
         projected_gravity = ObsTerm(
             func=mdp.projected_gravity,
             noise=Unoise(n_min=-0.05, n_max=0.05),
         )
-        velocity_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "base_velocity"})
         joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
         joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.5, n_max=1.5))
         actions = ObsTerm(func=mdp.last_action)
@@ -137,6 +140,9 @@ class ObservationsCfg:
             noise=Unoise(n_min=-0.1, n_max=0.1),
             clip=(-1.0, 1.0),
         )
+        # target_ee_pose_keypoints = ObsTerm(func=mdp.generated_commands, params={"command_name": "ee_pose_keypoints"})
+        target_pose = ObsTerm(func=mdp.pose_command_cartesian_6d_rotation, params={"command_name": "ee_pose"})
+        current_pose = ObsTerm(func=mdp.body_pose_cartesian_6d_rotation, params={"asset_cfg": SceneEntityCfg("robot", body_names=".*link_grasping_frame")})
 
         def __post_init__(self):
             self.enable_corruption = True
@@ -169,6 +175,16 @@ class EventCfg:
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names="base"),
             "mass_distribution_params": (-5.0, 5.0),
+            "operation": "add",
+        },
+    )
+    # Randomize the mass of a payload carried by the arm from 0 to max mapyload
+    add_arm_payload = EventTerm(
+        func=mdp.randomize_rigid_body_mass,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", body_names=".*ee_payload"),
+            "mass_distribution_params": (0.0, 1.0),
             "operation": "add",
         },
     )
@@ -213,7 +229,7 @@ class EventCfg:
     push_robot = EventTerm(
         func=mdp.push_by_setting_velocity,
         mode="interval",
-        interval_range_s=(10.0, 15.0),
+        interval_range_s=(3.0, 4.0),
         params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
     )
 
@@ -223,35 +239,29 @@ class RewardsCfg:
     """Reward terms for the MDP."""
 
     # -- task
-    track_lin_vel_xy_exp = RewTerm(
-        func=mdp.track_lin_vel_xy_exp, weight=1.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
+    pose_tracking = RewTerm(
+        func=mdp.pose_command_error,
+        weight=10.0,
+        params={"command_name": "ee_pose", "asset_cfg": SceneEntityCfg("robot", body_names=[".*link_grasping_frame"])}
     )
-    track_ang_vel_z_exp = RewTerm(
-        func=mdp.track_ang_vel_z_exp, weight=0.5, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
-    )
+    #TODO: Insert progress_reward in case we add delayed reward for pose tracking
     # -- penalties
-    lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-2.0)
-    ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
-    dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
+    arm_dof_power = RewTerm(func=mdp.joint_power_l1, weight=-0.004, params={"asset_cfg": SceneEntityCfg("robot", joint_names="K1.*")})
+    legs_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-0.00005, params={"asset_cfg": SceneEntityCfg("robot", joint_names=["F.*", "R.*"])}) 
+    #dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-0.0001)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
-    feet_air_time = RewTerm(
-        func=mdp.feet_air_time,
-        weight=0.125,
-        params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*FOOT"),
-            "command_name": "base_velocity",
-            "threshold": 0.5,
-        },
-    )
+    leg_action_rate_l2 = RewTerm(func=mdp.leg_action_rate_l2, weight=-0.01)
+    arm_action_rate_l2 = RewTerm(func=mdp.arm_action_rate_l2, weight=-0.01)
+    # -- constraints
+    root_height = RewTerm(func=mdp.root_height_below_minimum, weight=-1.0, params={"minimum_height": 0.25})
     undesired_contacts = RewTerm(
         func=mdp.undesired_contacts,
         weight=-1.0,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*THIGH"), "threshold": 1.0},
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*thigh"), "threshold": 1.0},
     )
     # -- optional penalties
-    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=0.0)
-    dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0)
+    #dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-10.0)
+    #base_orientation = RewTerm(func=mdp.flat_orientation_l2, weight=-1.0, params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk")})
 
 
 @configclass
@@ -261,8 +271,9 @@ class TerminationsCfg:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     base_contact = DoneTerm(
         func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base"), "threshold": 1.0},
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=["trunk", "link.*"]), "threshold": 1.0},
     )
+    # bad_orientation = DoneTerm(func=mdp.bad_orientation, params={"limit_angle": 0.5, "asset_cfg": SceneEntityCfg("robot", body_names=["trunk"])})
 
 
 @configclass
@@ -297,7 +308,7 @@ class LocomanipulationReachRoughEnvCfg(ManagerBasedRLEnvCfg):
         """Post initialization."""
         # general settings
         self.decimation = 4
-        self.episode_length_s = 20.0
+        self.episode_length_s = 12.0
         # simulation settings
         self.sim.dt = 0.005
         self.sim.render_interval = self.decimation
