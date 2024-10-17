@@ -89,7 +89,12 @@ class UniformPoseKeypointCommand(CommandTerm):
         It corresponds to the 3D positions of 3 vertices of a cube of side cube_size centered at the body's origin. so the keypoints are:
         [x1,y1,z1, x2,y2,z2, x3,y3,z3]
         """
-        return self.pose_command_keypoints_w.view(self.num_envs, 9)
+        return self.pose_command_keypoints_b.reshape((self.num_envs, 9))
+    
+    @property
+    def command_w(self) -> torch.Tensor:
+        """The desired pose command in the world frame. Shape is (num_envs, 9)."""
+        return self.pose_command_keypoints_w
 
     """
     Implementation specific functions.
@@ -110,12 +115,21 @@ class UniformPoseKeypointCommand(CommandTerm):
         self.pose_command_keypoints_b[:, 2, 1] = self._cube_size / 2.0
         self.pose_command_keypoints_b[:, 2, 2] = self._cube_size / 2.0
 
-        # Convert keypoints to world frame
+        # Keypoints in base frame
         self.pose_command_keypoints_b = transform_points(
             self.pose_command_keypoints_b,
             self.pose_command_b[:, :3],
             self.pose_command_b[:, 3:],
         )
+
+        # Convert keypoints to world frame
+        self.pose_command_w[:, :3], self.pose_command_w[:, 3:] = combine_frame_transforms(
+            self.robot.data.root_pos_w,
+            self.robot.data.root_quat_w,
+            self.pose_command_b[:, :3],
+            self.pose_command_b[:, 3:],
+        )
+
         self.pose_command_keypoints_w = transform_points(
             self.pose_command_keypoints_b,
             self.robot.data.root_pos_w,
@@ -155,6 +169,8 @@ class UniformPoseKeypointCommand(CommandTerm):
         quat = quat_from_euler_xyz(euler_angles[:, 0], euler_angles[:, 1], euler_angles[:, 2])
         # make sure the quaternion has real part as positive
         self.pose_command_b[env_ids, 3:] = quat_unique(quat) if self.cfg.make_quat_unique else quat
+        # convert the pose to keypoints
+        self._convert_pose_to_keypoints()
 
     def _update_command(self):
         pass

@@ -7,5 +7,7 @@
 
 from .commands_cfg import (
     UniformPoseKeypointCommandCfg,
+    UniformPoseWorldCommandCfg,
 )
-from .pose_keypoint_command import UniformPoseCommand
+from .pose_keypoint_command import UniformPoseKeypointCommand
+from .pose_world_command import UniformPoseWorldCommand
