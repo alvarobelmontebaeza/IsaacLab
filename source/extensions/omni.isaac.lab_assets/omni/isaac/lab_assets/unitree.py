@@ -20,6 +20,7 @@ import omni.isaac.lab.sim as sim_utils
 from omni.isaac.lab.actuators import ActuatorNetMLPCfg, DCMotorCfg, ImplicitActuatorCfg
 from omni.isaac.lab.assets.articulation import ArticulationCfg
 from omni.isaac.lab.utils.assets import ISAACLAB_NUCLEUS_DIR, ISAACLAB_ASSETS_DIR
+import math
 
 ##
 # Configuration - Actuators.
@@ -168,8 +169,8 @@ K1GO1_CFG = ArticulationCfg(
             joint_names_expr=[".*K1.*"],
             effort_limit=None, # Keep default value in USD file
             velocity_limit=3.14,
-            stiffness=15.0,
-            damping=5.0,
+            stiffness=5.0,
+            damping=2 * math.sqrt(10.0),
         ),
     },
 )
