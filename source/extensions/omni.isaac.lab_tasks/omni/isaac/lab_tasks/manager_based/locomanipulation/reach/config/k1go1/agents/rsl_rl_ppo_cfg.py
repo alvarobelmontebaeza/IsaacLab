@@ -14,6 +14,7 @@ from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import (
 
 @configclass
 class K1Go1ReachRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+    seed = 16
     num_steps_per_env = 24
     max_iterations = 40000
     save_interval = 100
@@ -29,11 +30,11 @@ class K1Go1ReachRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         value_loss_coef=1.0,
         use_clipped_value_loss=True,
         clip_param=0.2,
-        entropy_coef=0.001,
+        entropy_coef=0.01,
         num_learning_epochs=5,
         num_mini_batches=4,
-        learning_rate=2e-4,
-        schedule="adaptive",
+        learning_rate=5e-4,
+        schedule="fixed",
         gamma=0.99,
         lam=0.95,
         desired_kl=0.01,
