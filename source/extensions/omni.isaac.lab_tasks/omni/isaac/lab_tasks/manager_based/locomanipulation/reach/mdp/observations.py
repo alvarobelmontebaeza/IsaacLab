@@ -39,6 +39,7 @@ def body_pose_cartesian_6d_rotation(env: ManagerBasedRLEnv, asset_cfg: SceneEnti
     """The generated command from command term in the command manager with the given name."""
     # Get body idx from asset cfg
     asset: RigidObject = env.scene[asset_cfg.name]
+
     body_pose= asset.data.body_state_w[:, asset_cfg.body_ids[0], :7]  # type: ignore
     # Separate the position and rotation components
     pos = body_pose[:, :3]
@@ -48,6 +49,15 @@ def body_pose_cartesian_6d_rotation(env: ManagerBasedRLEnv, asset_cfg: SceneEnti
     rot_6d = pt3d.matrix_to_rotation_6d(rot_mat)
 
     return torch.cat([pos, rot_6d], dim=1)
+
+def body_pose_cartesian_quaternion(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """The generated command from command term in the command manager with the given name."""
+    # Get body idx from asset cfg
+    asset: RigidObject = env.scene[asset_cfg.name]
+
+    body_pose= asset.data.body_state_w[:, asset_cfg.body_ids[0], :7]  # type: ignore
+    return body_pose[:, :7]
+
 
 
 def feet_contacts(env, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
@@ -59,7 +69,5 @@ def feet_contacts(env, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
     """
     # Penalize feet sliding
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    print(contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, :])
     contacts = contact_sensor.data.net_forces_w_history[:, :, sensor_cfg.body_ids, :].norm(dim=-1).max(dim=1)[0] > 1.0
-    print(contacts)
-    return contacts
+    return contacts.float()
