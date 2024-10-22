@@ -17,7 +17,8 @@ from typing import TYPE_CHECKING
 from omni.isaac.lab.assets import RigidObject, Articulation
 from omni.isaac.lab.managers import SceneEntityCfg
 from omni.isaac.lab.sensors import ContactSensor
-from omni.isaac.lab.utils.math import quat_rotate_inverse, yaw_quat, combine_frame_transforms, quat_error_magnitude, transform_points
+from omni.isaac.lab.managers import ManagerTermBase, RewardTermCfg
+from omni.isaac.lab.utils.math import quat_rotate_inverse, yaw_quat, combine_frame_transforms, subtract_frame_transforms, quat_error_magnitude, matrix_from_quat, quat_mul, quat_inv
 
 if TYPE_CHECKING:
     from omni.isaac.lab.envs import ManagerBasedRLEnv
@@ -58,6 +59,11 @@ def feet_slide(env, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = Scen
     body_vel = asset.data.body_lin_vel_w[:, asset_cfg.body_ids, :2]
     reward = torch.sum(body_vel.norm(dim=-1) * contacts, dim=1)
     return reward
+
+def body_ang_acc_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """Penalize the linear acceleration of bodies using L2-kernel."""
+    asset: Articulation = env.scene[asset_cfg.name]
+    return torch.sum(torch.norm(asset.data.body_ang_acc_w[:, asset_cfg.body_ids, :], dim=-1), dim=1)
 
 ######## JOINT REWARDS ########
 def joint_power_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
@@ -186,11 +192,47 @@ def position_command_error(env: ManagerBasedRLEnv, command_name: str, asset_cfg:
     asset: RigidObject = env.scene[asset_cfg.name]
     command = env.command_manager.get_command(command_name)
     # obtain the desired and current positions
-    des_pos_b = command[:, :3]
-    des_pos_w, _ = combine_frame_transforms(asset.data.root_state_w[:, :3], asset.data.root_state_w[:, 3:7], des_pos_b)
+    des_pos_w = command[:, :3]
     curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
     return torch.norm(curr_pos_w - des_pos_w, dim=1)
 
+class progress_reward(ManagerTermBase):
+    """Reward for making progress towards the target."""
+
+    def __init__(self, env: ManagerBasedRLEnv, cfg: RewardTermCfg):
+        # initialize the base class
+        super().__init__(cfg, env)
+        # create history buffer
+        self.potentials = torch.zeros(env.num_envs, device=env.device)
+        self.prev_potentials = torch.zeros_like(self.potentials)
+
+    def reset(self, env_ids: torch.Tensor):
+        # extract the used quantities (to enable type-hinting)
+        asset: Articulation = self._env.scene["robot"]
+        # compute projection of current heading to desired heading vector
+        target_pos = torch.tensor(self.cfg.params["target_pos"], device=self.device)
+        to_target_pos = target_pos - asset.data.root_pos_w[env_ids, :3]
+        # reward terms
+        self.potentials[env_ids] = -torch.norm(to_target_pos, p=2, dim=-1) / self._env.step_dt
+        self.prev_potentials[env_ids] = self.potentials[env_ids]
+
+    def __call__(
+        self,
+        env: ManagerBasedRLEnv,
+        target_pos: tuple[float, float, float],
+        asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    ) -> torch.Tensor:
+        # extract the used quantities (to enable type-hinting)
+        asset: Articulation = env.scene[asset_cfg.name]
+        # compute vector to target
+        target_pos = torch.tensor(target_pos, device=env.device)
+        to_target_pos = target_pos - asset.data.root_pos_w[:, :3]
+        to_target_pos[:, 2] = 0.0
+        # update history buffer and compute new potential
+        self.prev_potentials[:] = self.potentials[:]
+        self.potentials[:] = -torch.norm(to_target_pos, p=2, dim=-1) / env.step_dt
+
+        return self.potentials - self.prev_potentials
 def _get_sigmas(epsilon_pos, epsilon_orn):
     """
     Function to get sigma values for position and orientation based on position and orientation errors.
@@ -228,11 +270,16 @@ def _get_sigmas(epsilon_pos, epsilon_orn):
     return sigma_pos, sigma_orn
 
 def pose_command_error(env: ManagerBasedRLEnv, command_name: str, asset_cfg: SceneEntityCfg) -> torch.Tensor:
-    """Penalize tracking of the position error using L2-norm.
+    """
+    Computes the reward based on the error between the desired and current poses of a specified asset.
 
-    The function computes the position error between the desired position (from the command) and the
-    current position of the asset's body (in world frame). The position error is computed as the L2-norm
-    of the difference between the desired and current positions.
+    Args:
+        env (ManagerBasedRLEnv): The environment containing the scene and command manager.
+        command_name (str): The name of the command specifying the desired pose.
+        asset_cfg (SceneEntityCfg): Configuration of the asset for which the pose error is computed.
+
+    Returns:
+        torch.Tensor: The computed reward based on the position and orientation errors.
     """
     # extract the asset (to enable type hinting)
     asset: RigidObject = env.scene[asset_cfg.name]
@@ -241,19 +288,63 @@ def pose_command_error(env: ManagerBasedRLEnv, command_name: str, asset_cfg: Sce
     des_pos_w, des_quat_w = command[:, :3], command[:, 3:]
     curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
     curr_quat_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], 3:7]  # type: ignore
-
+    # Get rotation matrices from quaternions
+    curr_rotmat_w = matrix_from_quat(curr_quat_w)
+    des_rotmat_w = matrix_from_quat(des_quat_w)
     # Compute the position and orientation errors
-    pos_error = torch.sum(torch.square(curr_pos_w - des_pos_w), dim=1).sqrt()
-    rot_error = quat_error_magnitude(curr_quat_w, des_quat_w)
+    pos_error = torch.norm(torch.square(curr_pos_w - des_pos_w), dim=1)
+    rot_error_mat = torch.matmul(des_rotmat_w, curr_rotmat_w.transpose(1, 2))
+    trace = torch.diagonal(rot_error_mat, dim1=-2, dim2=-1).sum(dim=-1)
+    trace = torch.clamp(trace, min=-1.0 + 1e-8, max=3.0 - 1e-8)
+    rot_error = torch.acos((trace - 1) / 2)
+    rot_error = torch.min(rot_error, 2 * torch.pi - rot_error)
 
     # Obtain the sigma values for position and orientation
-    sigma_pos, sigma_rot = _get_sigmas(pos_error, rot_error)
+    sigma_pos, sigma_rot = 0.05, 1.0#_get_sigmas(pos_error, rot_error)
 
     pos_rew = torch.exp(-pos_error / sigma_pos)
     rot_rew = torch.exp(-rot_error / sigma_rot)
 
     return pos_rew * rot_rew
+    
+def pose_command_error_spherical(env: ManagerBasedRLEnv, command_name: str, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+    """
+    Computes the reward based on the error between the desired and current poses of a specified asset.
 
+    Args:
+        env (ManagerBasedRLEnv): The environment containing the scene and command manager.
+        command_name (str): The name of the command specifying the desired pose.
+        asset_cfg (SceneEntityCfg): Configuration of the asset for which the pose error is computed.
+
+    Returns:
+        torch.Tensor: The computed reward based on the position and orientation errors.
+    """
+    # extract the asset (to enable type hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+    command = env.command_manager.get_command(command_name)
+    # obtain the desired and current poses    
+    des_pos_b, des_quat_b = command[:, :3], command[:, 3:]
+
+    curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
+    curr_quat_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], 3:7]  # type: ignore
+    # Convert current pos and quat to base coordinates
+    curr_pos_b, curr_quat_b = subtract_frame_transforms(
+        asset.data.root_state_w[:, :3],
+        asset.data.root_state_w[:, 3:7],
+        curr_pos_w,
+        curr_quat_w
+    )
+    # Compute the position and orientation errors
+    pos_error = torch.sum(torch.square(curr_pos_b - des_pos_b), dim=1).sqrt()
+    rot_error = quat_error_magnitude(curr_quat_b, des_quat_b)
+
+    # Obtain the sigma values for position and orientation
+    sigma_pos, sigma_rot = _get_sigmas(pos_error, rot_error)
+
+    pos_rew = torch.exp(-(pos_error **2) / sigma_pos)
+    rot_rew = torch.exp(-rot_error / sigma_rot)
+
+    return pos_rew * rot_rew
 
 def position_command_error_tanh(
     env: ManagerBasedRLEnv, std: float, command_name: str, asset_cfg: SceneEntityCfg
