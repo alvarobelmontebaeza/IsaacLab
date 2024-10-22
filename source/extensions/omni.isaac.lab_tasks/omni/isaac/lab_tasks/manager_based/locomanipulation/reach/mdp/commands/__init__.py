@@ -8,6 +8,10 @@
 from .commands_cfg import (
     UniformPoseKeypointCommandCfg,
     UniformPoseWorldCommandCfg,
+    UniformSphericalPoseCommandCfg,
+    TrajectoryCommandCfg,
 )
 from .pose_keypoint_command import UniformPoseKeypointCommand
 from .pose_world_command import UniformPoseWorldCommand
+from .pose_spherical_command import UniformSphericalPoseCommand
+from .trajectory_command import TrajectoryCommand
