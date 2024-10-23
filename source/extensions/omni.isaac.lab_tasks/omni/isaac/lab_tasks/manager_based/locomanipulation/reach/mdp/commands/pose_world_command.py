@@ -65,6 +65,10 @@ class UniformPoseWorldCommand(CommandTerm):
         self.pose_command_b[:, 3] = 1.0
         self.pose_command_w = torch.zeros_like(self.pose_command_b)
         self.pose_command_w[:, 3] = 1.0
+        self.init_ee_pose_w = torch.zeros(self.num_envs, 7, device=self.device)
+        self.init_ee_pose_w[:, 3] = 1.0
+        self.current_ee_target_w = torch.zeros(self.num_envs, 7, device=self.device)
+        self.current_ee_target_w[:, 3] = 1.0
         # -- metrics
         self.metrics["position_error"] = torch.zeros(self.num_envs, device=self.device)
         self.metrics["orientation_error"] = torch.zeros(self.num_envs, device=self.device)
@@ -143,8 +147,17 @@ class UniformPoseWorldCommand(CommandTerm):
             self.pose_command_b[env_ids, :3],
             self.pose_command_b[env_ids, 3:],
         )
+        # -- Get Initial EE pose
+        self.init_ee_pose_w[env_ids, :] = self.robot.data.body_state_w[env_ids, self.body_idx, :7].clone()
+        self.current_ee_target_w[env_ids, :] = self.robot.data.body_state_w[env_ids, self.body_idx, :7].clone()
 
     def _update_command(self):
+        # Interpolate target pose between initial and target pose
+        '''
+        T_traj = self.cfg.resampling_time_range[1]
+        t = torch.clip((T_traj - self.time_left) / T_traj, 0, 1).reshape(-1, 1)
+        self.current_ee_target_w[:, :3] = torch.lerp(self.init_ee_pose_w[:, :3], self.pose_command_w[:, :3], t)
+        '''
         pass
 
     def _set_debug_vis_impl(self, debug_vis: bool):
