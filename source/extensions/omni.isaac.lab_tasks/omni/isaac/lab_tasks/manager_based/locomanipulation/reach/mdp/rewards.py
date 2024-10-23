@@ -82,7 +82,7 @@ def foot_force_z(env, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = Sc
     """
     # Penalize feet sliding
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    contact_forces = contact_sensor.data.net_forces_w[:, :, 2]
+    contact_forces = contact_sensor.data.net_forces_w[:, asset_cfg.body_ids, 2]
     penalty = torch.sum(torch.square(contact_forces), dim=1)
     return penalty
 
@@ -100,7 +100,8 @@ def feet_force_std(env, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = 
     """
     # Penalize feet sliding
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    feet_forces = torch.clip(contact_sensor.data.net_forces_w[:, :, 2], 0.0)
+    feet_forces = torch.clip(contact_sensor.data.net_forces_w[:, asset_cfg.body_ids, 2], 0.0)
+    print(feet_forces)
     normalized_forces = feet_forces / (torch.sum(feet_forces, dim=1, keepdim=True) + 1e-7)
     return torch.std(normalized_forces, dim=1)
 
@@ -367,6 +368,46 @@ def pose_command_error_exp(env: ManagerBasedRLEnv, command_name: str, asset_cfg:
     rot_rew = torch.exp(-rot_error / sigma_rot)
 
     return pos_rew * rot_rew
+
+def pose_command_error_exp_base_frame(env: ManagerBasedRLEnv, command_name: str, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+    """
+    Computes the reward based on the error between the desired and current poses of a specified asset.
+
+    Args:
+        env (ManagerBasedRLEnv): The environment containing the scene and command manager.
+        command_name (str): The name of the command specifying the desired pose.
+        asset_cfg (SceneEntityCfg): Configuration of the asset for which the pose error is computed.
+
+    Returns:
+        torch.Tensor: The computed reward based on the position and orientation errors.
+    """
+    # extract the asset (to enable type hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+    command = env.command_manager.get_command(command_name)
+    # obtain the desired and current poses    
+    des_pos_b, des_quat_b = command[:, :3], command[:, 3:]
+    curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
+    curr_quat_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], 3:7]  # type: ignore
+    # Convert to base frame
+    curr_pos_b, curr_quat_b = subtract_frame_transforms(
+        asset.data.root_state_w[:, :3],
+        asset.data.root_state_w[:, 3:7],
+        curr_pos_w,
+        curr_quat_w
+    )
+
+    # Compute the position and orientation errors
+    pos_error = torch.sum(torch.square(curr_pos_b - des_pos_b), dim=1).sqrt()
+    rot_error = quat_error_magnitude(curr_quat_b, des_quat_b)
+
+    # Obtain the sigma values for position and orientation
+    sigma_pos, sigma_rot = 0.05, 1.0#_get_sigmas(pos_error, rot_error)
+
+    pos_rew = torch.exp(-(pos_error**2) / sigma_pos)
+    rot_rew = torch.exp(-rot_error / sigma_rot)
+
+    return pos_rew * rot_rew
+
 
 def pose_command_error_ln(env: ManagerBasedRLEnv, command_name: str, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     """
