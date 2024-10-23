@@ -18,6 +18,7 @@ import pytorch3d.transforms as pt3d
 from omni.isaac.lab.managers import SceneEntityCfg
 from omni.isaac.lab.assets import RigidObject
 from omni.isaac.lab.sensors import ContactSensor
+from omni.isaac.lab.utils.math import combine_frame_transforms, subtract_frame_transforms, compute_pose_error, quat_from_euler_xyz, quat_unique, euler_xyz_from_quat
 if TYPE_CHECKING:
     from omni.isaac.lab.envs import ManagerBasedEnv, ManagerBasedRLEnv
 
@@ -57,6 +58,22 @@ def body_pose_cartesian_quaternion(env: ManagerBasedRLEnv, asset_cfg: SceneEntit
 
     body_pose= asset.data.body_state_w[:, asset_cfg.body_ids[0], :7]  # type: ignore
     return body_pose[:, :7]
+
+def body_pose_cartesian_quaternion_base_frame(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """The generated command from command term in the command manager with the given name."""
+    # Get body idx from asset cfg
+    asset: RigidObject = env.scene[asset_cfg.name]
+
+    body_pose_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :7]  # type: ignore
+    body_pose_b = torch.zeros_like(body_pose_w)
+    body_pose_b[:, :3], body_pose_b[:, 3:] = subtract_frame_transforms(
+        asset.data.root_pos_w,
+        asset.data.root_quat_w,
+        body_pose_w[:, :3],
+        body_pose_w[:, 3:],
+    )
+    return body_pose_b
+
 
 
 
