@@ -278,7 +278,7 @@ class RewardsCfg:
     # -- optional penalties
     # dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.0)
     base_orientation = RewTerm(func=mdp.flat_orientation_l2, weight=-0.5, params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk")})
-    default_dof_pos = RewTerm(func=mdp.joint_deviation_l1, weight=-0.2, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*")})
+    default_dof_pos = RewTerm(func=mdp.joint_deviation_l1, weight=-0.01, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*")})
 
 
 @configclass

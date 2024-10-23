@@ -68,7 +68,7 @@ def feet_slide(env, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = Scen
     reward = torch.sum(body_vel.norm(dim=-1) * contacts, dim=1)
     return reward
 
-def foot_force_z(env, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+def foot_force_z(env, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
     """
     Calculate the penalty for feet sliding based on the z-component of contact forces.
 
@@ -82,11 +82,11 @@ def foot_force_z(env, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = Sc
     """
     # Penalize feet sliding
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    contact_forces = contact_sensor.data.net_forces_w[:, asset_cfg.body_ids, 2]
+    contact_forces = contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, 2]
     penalty = torch.sum(torch.square(contact_forces), dim=1)
     return penalty
 
-def feet_force_std(env, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+def feet_force_std(env, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
     """
     Calculate the penalty for feet sliding based on the z-component of contact forces.
 
@@ -100,8 +100,7 @@ def feet_force_std(env, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = 
     """
     # Penalize feet sliding
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    feet_forces = torch.clip(contact_sensor.data.net_forces_w[:, asset_cfg.body_ids, 2], 0.0)
-    print(feet_forces)
+    feet_forces = torch.clip(contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, 2], 0.0)
     normalized_forces = feet_forces / (torch.sum(feet_forces, dim=1, keepdim=True) + 1e-7)
     return torch.std(normalized_forces, dim=1)
 
