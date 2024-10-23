@@ -19,7 +19,7 @@ class K1Go1ReachRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     max_iterations = 40000
     save_interval = 100
     experiment_name = "k1go1_reach_rough"
-    empirical_normalization = False
+    empirical_normalization = True
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=1.0,
         actor_hidden_dims=[512, 256, 128],
@@ -33,8 +33,8 @@ class K1Go1ReachRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         entropy_coef=0.01,
         num_learning_epochs=5,
         num_mini_batches=4,
-        learning_rate=5e-4,
-        schedule="fixed",
+        learning_rate=2e-4,
+        schedule="adaptive",
         gamma=0.99,
         lam=0.95,
         desired_kl=0.01,
