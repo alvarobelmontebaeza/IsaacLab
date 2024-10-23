@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 from omni.isaac.lab.assets import Articulation
 from omni.isaac.lab.managers import CommandTerm
 from omni.isaac.lab.markers import VisualizationMarkers
-from omni.isaac.lab.utils.math import combine_frame_transforms, compute_pose_error, quat_from_euler_xyz, quat_unique, euler_xyz_from_quat
+from omni.isaac.lab.utils.math import combine_frame_transforms, subtract_frame_transforms, compute_pose_error, quat_from_euler_xyz, quat_unique, euler_xyz_from_quat
 import pytorch3d.transforms as pt3d
 
 if TYPE_CHECKING:
@@ -91,7 +91,7 @@ class UniformPoseWorldCommand(CommandTerm):
         Returns:
             torch.Tensor: The pose command in the world frame.
         """
-        return self.pose_command_w
+        return self.pose_command_b
     
     """
     Implementation specific functions.
@@ -127,7 +127,7 @@ class UniformPoseWorldCommand(CommandTerm):
 
         # Base offset pose - follow offset computation as in https://arxiv.org/pdf/2210.10044
         pos_offset = self.robot.data.root_state_w[env_ids, :3].clone()
-        pos_offset[:, 2] = 0.4 # fixed height offset
+        pos_offset[:, 2] = 0.5 # fixed height offset
         rot_offset = self.robot.data.root_state_w[env_ids, 3:7].clone()
         euler_x, euler_y, euler_z = euler_xyz_from_quat(rot_offset)
         rot_offset = quat_from_euler_xyz(torch.zeros_like(euler_x), torch.zeros_like(euler_y), euler_z) #roll/pitch independent offset
@@ -158,7 +158,12 @@ class UniformPoseWorldCommand(CommandTerm):
         t = torch.clip((T_traj - self.time_left) / T_traj, 0, 1).reshape(-1, 1)
         self.current_ee_target_w[:, :3] = torch.lerp(self.init_ee_pose_w[:, :3], self.pose_command_w[:, :3], t)
         '''
-        pass
+        self.pose_command_b[:, :3], self.pose_command_b[:, 3:] = subtract_frame_transforms(
+            self.robot.data.root_pos_w,
+            self.robot.data.root_quat_w,
+            self.pose_command_w[:, :3],
+            self.pose_command_w[:, 3:],
+        )
 
     def _set_debug_vis_impl(self, debug_vis: bool):
         # create markers if necessary for the first tome
