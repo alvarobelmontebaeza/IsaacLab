@@ -86,6 +86,24 @@ def foot_force_z(env, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = Sc
     penalty = torch.sum(torch.square(contact_forces), dim=1)
     return penalty
 
+def feet_force_std(env, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """
+    Calculate the penalty for feet sliding based on the z-component of contact forces.
+
+    Args:
+        env: The environment containing the scene and sensors.
+        sensor_cfg (SceneEntityCfg): Configuration for the contact sensor.
+        asset_cfg (SceneEntityCfg, optional): Configuration for the asset, default is a robot.
+
+    Returns:
+        torch.Tensor: The penalty calculated as the sum of squared z-component contact forces.
+    """
+    # Penalize feet sliding
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    feet_forces = torch.clip(contact_sensor.data.net_forces_w[:, :, 2], 0.0)
+    normalized_forces = feet_forces / (torch.sum(feet_forces, dim=1, keepdim=True) + 1e-7)
+    return torch.std(normalized_forces, dim=1)
+
 def body_ang_acc_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Penalize the linear acceleration of bodies using L2-kernel."""
     asset: Articulation = env.scene[asset_cfg.name]
@@ -131,6 +149,26 @@ def joint_power_l1(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEnti
     torques = asset.data.applied_torque[:, asset_cfg.joint_ids]
     joint_vel = asset.data.joint_vel[:, asset_cfg.joint_ids]
     return torch.sum(torch.abs(torques * joint_vel), dim=1)
+
+def joint_power_std(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    # Separate joint ids per leg
+    asset: Articulation = env.scene[asset_cfg.name]
+    leg_energy_usage = torch.zeros((env.num_envs, 4), device=env.device)
+    leg_joint_ids = { # Joint 8 is base arm joint
+        0: [0, 4, 9],
+        1: [1, 5, 10],
+        2: [2, 6, 11],
+        3: [3, 7, 12]
+    }
+    for i in range(4):
+        torques = asset.data.applied_torque[:, leg_joint_ids[i]]
+        joint_vel = asset.data.joint_vel[:, leg_joint_ids[i]]
+        leg_energy_usage[:, i] = torch.sum(torch.square(torques * joint_vel), dim=1)
+    
+    power_mean = torch.mean(leg_energy_usage, dim=1)
+    power_std = torch.std(leg_energy_usage, dim=1)
+
+    return power_std / power_mean # scale the std by the mean
 
 ######## ACTION REWARDS ########
 def hip_action_l2(env: ManagerBasedRLEnv) -> torch.Tensor:
