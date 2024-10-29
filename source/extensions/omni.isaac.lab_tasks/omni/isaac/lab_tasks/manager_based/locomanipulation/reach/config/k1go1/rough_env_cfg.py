@@ -27,18 +27,14 @@ class K1Go1ReachRoughEnvCfg(LocomanipulationReachRoughEnvCfg):
         self.scene.terrain.terrain_generator.sub_terrains["random_rough"].noise_step = 0.01
 
         # reduce action scale
-        #self.actions.leg_joint_pos.scale = 0.25
+        self.actions.leg_joint_pos.scale = 0.25
 
         # event
-        self.events.push_robot = None
-
-        self.events.add_base_mass.params["mass_distribution_params"] = (-1.0, 1.0)
+        self.events.add_base_mass.params["mass_distribution_params"] = (-0.5, 0.5)
         self.events.add_base_mass.params["asset_cfg"].body_names = "trunk"
-        self.events.add_base_mass = None
 
         self.events.add_arm_payload.params["mass_distribution_params"] = (0.0, 0.1)
         self.events.add_arm_payload.params["asset_cfg"].body_names = ".*link_grasping_frame"
-        self.events.add_arm_payload = None
         
         self.events.base_external_force_torque.params["asset_cfg"].body_names = "trunk"
         self.events.reset_robot_joints.params["position_range"] = (1.0, 1.0)
@@ -53,11 +49,6 @@ class K1Go1ReachRoughEnvCfg(LocomanipulationReachRoughEnvCfg):
                 "yaw": (0.0, 0.0),
             },
         }
-
-        # rewards
-        # self.rewards.undesired_contacts = None
-        # terminations
-        # self.terminations.base_contact.params["sensor_cfg"].body_names = "trunk"
 
 
 @configclass
