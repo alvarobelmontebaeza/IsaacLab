@@ -15,7 +15,7 @@ import torch
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from omni.isaac.lab.assets import Articulation
+from omni.isaac.lab.assets import Articulation, RigidObject
 from omni.isaac.lab.managers import SceneEntityCfg
 from omni.isaac.lab.terrains import TerrainImporter
 
@@ -53,3 +53,35 @@ def terrain_levels_vel(
     terrain.update_env_origins(env_ids, move_up, move_down)
     # return the mean terrain level
     return torch.mean(terrain.terrain_levels.float())
+
+def target_pose_ranges(
+    env: ManagerBasedRLEnv, env_ids: Sequence[int], command_name: str, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+) -> torch.Tensor:
+    """Curriculum based on the distance between the robot and the target pose.
+
+    This term is used to increase the difficulty of the target pose when the robot reaches the target pose and decrease
+    the difficulty when the robot is far from the target pose.
+
+    Returns:
+        The mean target pose range for the given environment ids.
+    """
+    # extract the asset (to enable type hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+    # Extract current command and command term object
+    command = env.command_manager.get_command(command_name)
+    command_term = env.command_manager.get_term(command_name)
+    # obtain the desired and current poses    
+    des_pos_w, des_quat_w = command[:, :3], command[:, 3:]
+    curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
+    curr_quat_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], 3:7]  # type: ignore
+    # Compute the position and orientation errors
+    pos_error = torch.sum(torch.square(curr_pos_w - des_pos_w), dim=1).sqrt()
+    rot_error = quat_error_magnitude(curr_quat_w, des_quat_w)
+
+    # Obtain the sigma values for position and orientation
+    sigma_pos, sigma_rot = 0.05, 1.0#_get_sigmas(pos_error, rot_error)
+
+    pos_rew = torch.exp(-(pos_error**2) / sigma_pos)
+    rot_rew = torch.exp(-rot_error / sigma_rot)
+
+    return pos_rew * rot_rew
