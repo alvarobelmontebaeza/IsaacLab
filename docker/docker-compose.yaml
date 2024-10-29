@@ -121,6 +121,33 @@ services:
     stdin_open: true
     tty: true
 
+  # This service adds custom code for locomanipulation environment
+  # installation on top of the base image
+  isaac-lab-locomanipulation:
+    profiles: [ "locomanipulation" ]
+    env_file:
+      - .env.base
+      - .env.ros2
+      - .env.locomanipulation
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile.locomanipulation
+      args:
+        # ROS2_APT_PACKAGE will default to NONE. This is to
+        # avoid a warning message when building only the base profile
+        # with the .env.base file
+        - ROS2_APT_PACKAGE=${ROS2_APT_PACKAGE:-NONE}
+    image: isaac-lab-locomanipulation
+    container_name: isaac-lab-locomanipulation
+    environment: *default-isaac-lab-environment
+    volumes: *default-isaac-lab-volumes
+    network_mode: host
+    deploy: *default-isaac-lab-deploy
+    # This is the entrypoint for the container
+    entrypoint: bash
+    stdin_open: true
+    tty: true
+
 volumes:
   # isaac-sim
   isaac-cache-kit:
