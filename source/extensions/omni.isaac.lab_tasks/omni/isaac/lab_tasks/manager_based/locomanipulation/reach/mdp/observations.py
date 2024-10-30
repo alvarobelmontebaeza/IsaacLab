@@ -14,7 +14,7 @@ from __future__ import annotations
 import torch
 from typing import TYPE_CHECKING
 
-import pytorch3d.transforms as pt3d
+
 from omni.isaac.lab.managers import SceneEntityCfg
 from omni.isaac.lab.assets import RigidObject
 from omni.isaac.lab.sensors import ContactSensor
@@ -22,7 +22,7 @@ from omni.isaac.lab.utils.math import combine_frame_transforms, subtract_frame_t
 if TYPE_CHECKING:
     from omni.isaac.lab.envs import ManagerBasedEnv, ManagerBasedRLEnv
 
-
+'''
 def pose_command_cartesian_6d_rotation(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
     """The generated command from command term in the command manager with the given name."""
     # Get the pose command from the command manager
@@ -50,6 +50,7 @@ def body_pose_cartesian_6d_rotation(env: ManagerBasedRLEnv, asset_cfg: SceneEnti
     rot_6d = pt3d.matrix_to_rotation_6d(rot_mat)
 
     return torch.cat([pos, rot_6d], dim=1)
+'''
 
 def body_pose_cartesian_quaternion(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """The generated command from command term in the command manager with the given name."""
