@@ -33,7 +33,8 @@ ISAAC_NUCLEUS_DIR = f"{NUCLEUS_ASSET_ROOT_DIR}/Isaac"
 ISAACLAB_NUCLEUS_DIR = f"{ISAAC_NUCLEUS_DIR}/IsaacLab"
 """Path to the ``Isaac/IsaacLab`` directory on the NVIDIA Nucleus Server."""
 
-ISAACLAB_ASSETS_DIR = "/home/alvaro/NVOmniverse/IsaacLab/source/extensions/omni.isaac.lab_assets/data/"
+ISAACLAB_PATH = os.environ.get("ISAACLAB_PATH", "/workspace/isaaclab")
+ISAACLAB_ASSETS_DIR = f"{ISAACLAB_PATH}/source/extensions/omni.isaac.lab_assets/data/"
 
 
 def check_file_path(path: str) -> Literal[0, 1, 2]:
