@@ -173,7 +173,7 @@ K1GO1_CFG = ArticulationCfg(
             effort_limit=None, # Keep default value in USD file
             velocity_limit=3.14,
             stiffness=5.0,
-            damping=2 * math.sqrt(10.0),
+            damping=1.0 #2 * math.sqrt(10.0),
         ),
     },
 )
