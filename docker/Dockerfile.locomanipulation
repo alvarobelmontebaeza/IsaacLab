@@ -1,3 +1,32 @@
 # Everything past this stage is to install
-# ROS2 Humble
-FROM isaac-lab-ros2 AS isaac-lab-locomanipulation
+FROM nvcr.io/nvidia/cuda:11.8.0-devel-ubuntu22.04 AS cuda_stage
+FROM isaac-lab-base AS isaac-lab-locomanipulation
+
+# Home dir of docker user, typically '/root'
+ARG CUROBO_INSTALL_PATH_ARG
+ENV CUROBO_INSTALL_PATH=${CUROBO_INSTALL_PATH_ARG}
+
+# Install the required packages
+RUN apt-get update
+RUN apt-get install -y python3-pip
+RUN --mount=type=cache,target=/var/cache/apt \
+    ${ISAACLAB_PATH}/_isaac_sim/python.sh -m pip install --upgrade pip
+
+# Copy cuda11.8 from cuda_stage image
+COPY --from=cuda_stage /usr/local/cuda-11.8 /usr/local/cuda-11.8
+ENV PATH=/usr/local/cuda-11.8/bin:$PATH
+ENV TORCH_CUDA_ARCH_LIST="7.0+PTX"
+ENV USE_CX11_ABI=0
+ENV PRE_CX11_ABI=ON
+ENV CUDA_HOME='/usr/local/cuda-11.8/'
+
+# Install cuRobo
+RUN --mount=type=cache,target=/var/cache/apt \
+    ${ISAACLAB_PATH}/_isaac_sim/python.sh -m pip install ninja wheel tomli && \
+    mkdir ${CUROBO_INSTALL_PATH} && \
+    cd ${CUROBO_INSTALL_PATH}/ && \
+    git clone https://github.com/NVlabs/curobo.git && \
+    cd ${CUROBO_INSTALL_PATH}/curobo && \
+    ${ISAACLAB_PATH}/_isaac_sim/python.sh -m pip install -e .[isaacsim] --no-build-isolation
+
+# Mount the IsaacLab data directory to container
