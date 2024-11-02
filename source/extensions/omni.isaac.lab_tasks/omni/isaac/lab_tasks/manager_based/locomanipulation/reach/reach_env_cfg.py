@@ -116,14 +116,7 @@ class ActionsCfg:
     arm_joint_pos = mdp.JointPositionActionCfg(
         asset_name="robot",
         joint_names=[".*K1.*"],
-        scale={
-            ".*K1_shoulder_pan_joint": 2.1,
-            ".*K1_shoulder_lift_joint": 0.6,
-            ".*K1_elbow_joint": 0.6,
-            ".*K1_wrist_1_joint": 0.5,
-            ".*K1_wrist_2_joint": 0.5,
-            ".*K1_wrist_3_joint": 0.5,
-        },
+        scale=0.25,
         use_default_offset=True,
     )
 
@@ -262,11 +255,11 @@ class RewardsCfg:
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
 
     # -- penalties
-    arm_dof_power = RewTerm(func=mdp.joint_power_l1, weight=-1e-3, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*K1.*")})
+    arm_dof_power = RewTerm(func=mdp.joint_power_l1, weight=-4e-2, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*K1.*")})
     legs_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-5e-6, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
     # foot_force_l2 = RewTerm(func=mdp.foot_force_z, weight=-1e-4, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")}) 
     # base_ang_acc = RewTerm(func=mdp.body_ang_acc_l2, weight=-0.0001, params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk")})
-    dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-0.000001)
+    # dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1e-4)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
     leg_action_rate_l2 = RewTerm(func=mdp.leg_action_rate_l2, weight=-0.01)
     arm_action_rate_l2 = RewTerm(func=mdp.arm_action_rate_l2, weight=-0.01)
@@ -275,6 +268,11 @@ class RewardsCfg:
     
     # -- constraints
     root_height = RewTerm(func=mdp.root_height_below_minimum, weight=-1.0, params={"minimum_height": 0.25})
+    undesired_contact = RewTerm(
+        func=mdp.undesired_contacts,
+        weight=-1.0,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*link.*"]), "threshold": 1.0},
+    )
     # -- optional penalties
     dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.0)
     # base_orientation = RewTerm(func=mdp.flat_orientation_l2, weight=0.5, params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk")})
