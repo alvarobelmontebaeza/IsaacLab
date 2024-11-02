@@ -172,8 +172,22 @@ K1GO1_CFG = ArticulationCfg(
             joint_names_expr=[".*K1.*"],
             effort_limit=None, # Keep default value in USD file
             velocity_limit=3.14,
-            stiffness=5.0,
-            damping=2 * math.sqrt(5.0)
+            stiffness={
+                ".*K1_shoulder_pan_joint": 100.0,
+                ".*K1_shoulder_lift_joint": 100.0,
+                ".*K1_elbow_joint": 100.0,
+                ".*K1_wrist_1_joint": 20.0,
+                ".*K1_wrist_2_joint": 20.0,
+                ".*K1_wrist_3_joint": 5.0,
+            },
+            damping={
+                ".*K1_shoulder_pan_joint": 3.0,
+                ".*K1_shoulder_lift_joint": 3.0,
+                ".*K1_elbow_joint": 3.0,
+                ".*K1_wrist_1_joint": 2.0,
+                ".*K1_wrist_2_joint": 1.0,
+                ".*K1_wrist_3_joint": 0.5,
+            },
         ),
     },
 )
