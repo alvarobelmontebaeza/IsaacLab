@@ -314,12 +314,12 @@ def _get_sigmas(epsilon_pos, epsilon_orn):
     - sigma_orn (torch.Tensor): Tensor of sigma values for orientation, shape (N,).
     """
     # Define thresholds and corresponding sigma values for position
-    pos_thresholds = [100.0, 1.0, 0.8, 0.5, 0.4, 0.2, 0.1]
+    pos_thresholds = [100.0, 1.0, 0.8, 0.5, 0.2, 0.1, 0.05]
     sigma_pos_values = [2.0, 1.0, 0.5, 0.1, 0.05, 0.01, 0.005]
 
     # Define thresholds and corresponding sigma values for orientation
     orn_thresholds = [100.0, 1.0, 0.8, 0.6, 0.2]
-    sigma_orn_values = [8.0, 4.0, 2.0, 1.0, 0.5]
+    sigma_orn_values = [4.0, 2.0, 1.0, 0.5, 0.1]
 
     # Initialize tensors for sigma values (default to the smallest value)
     sigma_pos = torch.full_like(epsilon_pos, sigma_pos_values[0])
@@ -361,7 +361,7 @@ def pose_command_error_exp(env: ManagerBasedRLEnv, command_name: str, asset_cfg:
     rot_error = quat_error_magnitude(curr_quat_w, des_quat_w)
 
     # Obtain the sigma values for position and orientation
-    sigma_pos, sigma_rot = 0.05, 1.0#_get_sigmas(pos_error, rot_error)
+    sigma_pos, sigma_rot = _get_sigmas(torch.abs(curr_pos_w - des_pos_w), rot_error) # 0.05, 1.0
 
     pos_rew = torch.exp(-(pos_error**2) / sigma_pos)
     rot_rew = torch.exp(-rot_error / sigma_rot)
