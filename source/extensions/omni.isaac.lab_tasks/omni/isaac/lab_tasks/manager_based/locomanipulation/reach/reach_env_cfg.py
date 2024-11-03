@@ -112,7 +112,7 @@ class CommandsCfg:
 class ActionsCfg:
     """Action specifications for the MDP."""
     # Output target joint positions for both the arm and the leg joints
-    leg_joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*hip_joint", ".*_thigh_joint", ".*calf_joint"], scale=0.25, use_default_offset=True)
+    leg_joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"], scale=0.25, use_default_offset=True)
     arm_joint_pos = mdp.JointPositionActionCfg(
         asset_name="robot",
         joint_names=[".*K1.*"],
@@ -249,20 +249,20 @@ class RewardsCfg:
     # -- task
     pose_tracking = RewTerm(
         func=mdp.pose_command_error_exp_base_frame,
-        weight=4.0,
+        weight=5.0,
         params={"command_name": "ee_pose", "asset_cfg": SceneEntityCfg("robot", body_names=[".*link_grasping_frame"])}
     )
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
 
     # -- penalties
-    arm_dof_power = RewTerm(func=mdp.joint_power_l1, weight=-4e-2, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*K1.*")})
-    legs_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-5e-6, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
+    # arm_dof_power = RewTerm(func=mdp.joint_power_l1, weight=-4e-2, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*K1.*")})
+    # legs_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-5e-6, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
     # foot_force_l2 = RewTerm(func=mdp.foot_force_z, weight=-1e-4, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")}) 
     # base_ang_acc = RewTerm(func=mdp.body_ang_acc_l2, weight=-0.0001, params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk")})
-    # dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1e-4)
+    dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1e-4)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
-    leg_action_rate_l2 = RewTerm(func=mdp.leg_action_rate_l2, weight=-0.01)
-    arm_action_rate_l2 = RewTerm(func=mdp.arm_action_rate_l2, weight=-0.01)
+    leg_action_rate_l2 = RewTerm(func=mdp.leg_action_rate_l2, weight=-0.05)
+    arm_action_rate_l2 = RewTerm(func=mdp.arm_action_rate_l2, weight=-0.05)
     hip_action_l2 = RewTerm(func=mdp.hip_action_l2, weight=-0.01)
     even_mass_usage = RewTerm(func=mdp.feet_force_std, weight=-1.0, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
     
@@ -276,7 +276,7 @@ class RewardsCfg:
     # -- optional penalties
     dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.0)
     # base_orientation = RewTerm(func=mdp.flat_orientation_l2, weight=0.5, params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk")})
-    # default_dof_pos = RewTerm(func=mdp.joint_deviation_l1, weight=-0.01, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*")})
+    default_dof_pos = RewTerm(func=mdp.joint_deviation_l1, weight=-0.1, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
 
 
 @configclass
