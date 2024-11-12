@@ -88,21 +88,26 @@ def foot_force_z(env, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
 
 def feet_force_std(env, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
     """
-    Calculate the penalty for feet sliding based on the z-component of contact forces.
+    Computes a penalty based on the standard deviation of the normalized forces on the feet.
 
     Args:
-        env: The environment containing the scene and sensors.
-        sensor_cfg (SceneEntityCfg): Configuration for the contact sensor.
-        asset_cfg (SceneEntityCfg, optional): Configuration for the asset, default is a robot.
+        env: The environment object containing the scene and sensors.
+        sensor_cfg: Configuration for the contact sensor, including the name and body IDs.
 
     Returns:
-        torch.Tensor: The penalty calculated as the sum of squared z-component contact forces.
+        torch.Tensor: A tensor containing the penalty for each environment. The penalty is based on the 
+                      standard deviation of the normalized forces on the feet. If the sum of normalized 
+                      forces is zero, a penalty of 100.0 is assigned.
     """
-    # Penalize feet sliding
+
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     feet_forces = torch.clip(contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, 2], 0.0)
-    normalized_forces = feet_forces / (torch.sum(feet_forces, dim=1, keepdim=True) + 1e-7)
-    return torch.std(normalized_forces, dim=1)
+    normalized_forces = feet_forces / (torch.sum(feet_forces, dim=1, keepdim=True) + 1e-8)
+    penalty = torch.zeros(env.num_envs, device=env.device)
+    mask = normalized_forces.sum(dim=1) > 1e-8
+    penalty[mask] = torch.std(normalized_forces[mask], dim=1) ** 2
+    penalty[~mask] = 100.0
+    return penalty
 
 def body_ang_acc_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Penalize the linear acceleration of bodies using L2-kernel."""
