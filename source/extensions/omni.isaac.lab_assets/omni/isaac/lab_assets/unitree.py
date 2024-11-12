@@ -181,9 +181,9 @@ K1GO1_CFG = ArticulationCfg(
                 ".*K1_wrist_3_joint": 5.0,
             },
             damping={
-                ".*K1_shoulder_pan_joint": 2.0,
-                ".*K1_shoulder_lift_joint": 2.0,
-                ".*K1_elbow_joint": 2.0,
+                ".*K1_shoulder_pan_joint": 1.0,
+                ".*K1_shoulder_lift_joint": 1.0,
+                ".*K1_elbow_joint": 1.0,
                 ".*K1_wrist_1_joint": 1.0,
                 ".*K1_wrist_2_joint": 1.0,
                 ".*K1_wrist_3_joint": 0.5,
