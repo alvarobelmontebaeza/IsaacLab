@@ -46,7 +46,6 @@ class K1Go1ReachFlatPPORunnerCfg(K1Go1ReachRoughPPORunnerCfg):
     def __post_init__(self):
         super().__post_init__()
 
-        self.max_iterations = 5000
         self.experiment_name = "k1go1_reach_flat"
         self.save_interval = 100
         #self.policy.actor_hidden_dims = [128, 128, 128]
