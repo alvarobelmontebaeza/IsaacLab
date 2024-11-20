@@ -31,8 +31,21 @@ class K1ReachEnvCfg(ReachEnvCfg):
         self.scene.robot = K1_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         # override rewards
         self.rewards.end_effector_position_tracking.params["asset_cfg"].body_names = ["link_grasping_frame"]
+        self.rewards.end_effector_position_tracking.weight = -0.
         self.rewards.end_effector_position_tracking_fine_grained.params["asset_cfg"].body_names = ["link_grasping_frame"]
+        self.rewards.end_effector_position_tracking_fine_grained.weight = 0.
         self.rewards.end_effector_orientation_tracking.params["asset_cfg"].body_names = ["link_grasping_frame"]
+        self.rewards.end_effector_orientation_tracking.weight = -0.
+
+        self.rewards.pose_command_tracking.params["asset_cfg"].body_names = ["link_grasping_frame"]
+        self.rewards.pose_command_tracking.weight = 5.0
+        
+        self.rewards.joint_vel.weight = 0.0
+        self.rewards.joint_power.weight = -0.05
+        self.rewards.action_rate.weight = -0.1
+
+        self.curriculum.action_rate = None
+        self.curriculum.joint_vel = None
 
         # override actions
         self.actions.arm_action = mdp.JointPositionActionCfg(
@@ -43,9 +56,13 @@ class K1ReachEnvCfg(ReachEnvCfg):
         self.commands.ee_pose.body_name = "link_grasping_frame"
         self.commands.ee_pose.ranges.pitch = (-math.pi / 4, math.pi / 4)
         self.commands.ee_pose.ranges.yaw = (-math.pi / 4, math.pi / 4)
-        self.commands.ee_pose.ranges.pos_x = (0.2, 0.5)
+        self.commands.ee_pose.ranges.pos_x = (0.1, 0.3)
         self.commands.ee_pose.ranges.pos_y = (-0.2, 0.2)
         self.commands.ee_pose.ranges.pos_z = (0.1, 0.4)
+
+        self.sim.dt = 0.005
+        self.decimation = 4
+        self.sim.render_interval = self.decimation
 
 
 
