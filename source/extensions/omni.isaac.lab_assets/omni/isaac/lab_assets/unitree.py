@@ -165,29 +165,30 @@ K1GO1_CFG = ArticulationCfg(
         },
         joint_vel={".*": 0.0},
     ),
-    soft_joint_pos_limit_factor=0.9,
+    soft_joint_pos_limit_factor=0.95,
     actuators={
         "base_legs": GO1_ACTUATOR_CFG,
-        "arm_joints": ImplicitActuatorCfg(
-            joint_names_expr=[".*K1.*"],
-            effort_limit=None, # Keep default value in USD file
+        "arm_low_torque": ImplicitActuatorCfg(
+            joint_names_expr=["K1_shoulder_pan_joint", "K1_wrist_1_joint", "K1_wrist_2_joint", "K1_wrist_3_joint"],
+            effort_limit={
+                "K1_shoulder_pan_joint": 0.3 * 4.41,
+                "K1_wrist_1_joint": 0.2 * 4.41,
+                "K1_wrist_2_joint": 0.3 * 4.41,
+                "K1_wrist_3_joint": 0.2 * 4.41,
+            },
             velocity_limit=3.14,
-            stiffness={
-                ".*K1_shoulder_pan_joint": 10.0,
-                ".*K1_shoulder_lift_joint": 10.0,
-                ".*K1_elbow_joint": 10.0,
-                ".*K1_wrist_1_joint": 5.0,
-                ".*K1_wrist_2_joint": 5.0,
-                ".*K1_wrist_3_joint": 5.0,
+            stiffness=5.0,
+            damping=1.0,
+        ),
+        "arm_high_torque": ImplicitActuatorCfg(
+            joint_names_expr=["K1_shoulder_lift_joint", "K1_elbow_joint"],
+            effort_limit={
+                "K1_shoulder_lift_joint": 0.3 * 8.33,
+                "K1_elbow_joint": 0.3 * 8.33,
             },
-            damping={
-                ".*K1_shoulder_pan_joint": 1.5,
-                ".*K1_shoulder_lift_joint": 1.5,
-                ".*K1_elbow_joint": 1.5,
-                ".*K1_wrist_1_joint": 1.0,
-                ".*K1_wrist_2_joint": 1.0,
-                ".*K1_wrist_3_joint": 0.5,
-            },
+            velocity_limit=3.14,
+            stiffness=5.0,
+            damping=1.0,
         ),
     },
 )
