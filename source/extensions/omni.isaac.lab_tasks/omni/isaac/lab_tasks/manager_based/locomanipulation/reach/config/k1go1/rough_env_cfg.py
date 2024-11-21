@@ -32,10 +32,8 @@ class K1Go1ReachRoughEnvCfg(LocomanipulationReachRoughEnvCfg):
         # event
         self.events.add_base_mass.params["mass_distribution_params"] = (-0.5, 0.5)
         self.events.add_base_mass.params["asset_cfg"].body_names = "trunk"
-        '''
         self.events.add_arm_payload.params["mass_distribution_params"] = (0.0, 0.1)
         self.events.add_arm_payload.params["asset_cfg"].body_names = ".*link_grasping_frame"
-        '''
         
         self.events.base_external_force_torque.params["asset_cfg"].body_names = "trunk"
         self.events.reset_robot_joints.params["position_range"] = (1.0, 1.0)
