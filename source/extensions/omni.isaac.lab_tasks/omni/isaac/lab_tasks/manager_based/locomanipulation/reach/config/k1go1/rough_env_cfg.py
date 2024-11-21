@@ -10,7 +10,7 @@ from omni.isaac.lab_tasks.manager_based.locomanipulation.reach.reach_env_cfg imp
 ##
 # Pre-defined configs
 ##
-from omni.isaac.lab_assets.unitree import K1GO1_CFG  # isort: skip
+from omni.isaac.lab_assets.unitree import K1GO1_CFG, UNITREE_GO1_CFG  # isort: skip
 
 
 @configclass
@@ -19,7 +19,7 @@ class K1Go1ReachRoughEnvCfg(LocomanipulationReachRoughEnvCfg):
         # post init of parent
         super().__post_init__()
 
-        self.scene.robot = K1GO1_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.scene.robot = UNITREE_GO1_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/trunk"
         # scale down the terrains because the robot is small
         self.scene.terrain.terrain_generator.sub_terrains["boxes"].grid_height_range = (0.025, 0.1)
@@ -32,9 +32,10 @@ class K1Go1ReachRoughEnvCfg(LocomanipulationReachRoughEnvCfg):
         # event
         self.events.add_base_mass.params["mass_distribution_params"] = (-0.5, 0.5)
         self.events.add_base_mass.params["asset_cfg"].body_names = "trunk"
-
+        '''
         self.events.add_arm_payload.params["mass_distribution_params"] = (0.0, 0.1)
         self.events.add_arm_payload.params["asset_cfg"].body_names = ".*link_grasping_frame"
+        '''
         
         self.events.base_external_force_torque.params["asset_cfg"].body_names = "trunk"
         self.events.reset_robot_joints.params["position_range"] = (1.0, 1.0)
