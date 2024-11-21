@@ -149,7 +149,7 @@ class ObservationsCfg:
         '''
         target_pose = ObsTerm(func=mdp.generated_commands, params={"command_name": "ee_pose"})
         # target_pose = ObsTerm(func=mdp.pose_command_cartesian_6d_rotation, params={"command_name": "ee_pose"})
-        # current_pose = ObsTerm(func=mdp.body_pose_cartesian_quaternion_base_frame, params={"asset_cfg": SceneEntityCfg("robot", body_names=".*link_grasping_frame")})
+        current_pose = ObsTerm(func=mdp.body_pose_cartesian_quaternion_base_frame, params={"asset_cfg": SceneEntityCfg("robot", body_names=".*link_grasping_frame")})
 
         def __post_init__(self):
             self.enable_corruption = True
