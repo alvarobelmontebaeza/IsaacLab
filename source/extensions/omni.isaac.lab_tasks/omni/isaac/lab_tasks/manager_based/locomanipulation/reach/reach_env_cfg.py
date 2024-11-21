@@ -100,10 +100,10 @@ class CommandsCfg:
         ranges=mdp.UniformPoseWorldCommandCfg.Ranges(
             pos_x=(-0.2, 0.2),
             pos_y=(-0.2, 0.2),
-            pos_z=(-0.2, -0.1),
-            roll=(0.0, 0.0),
-            pitch= (-math.pi * 0.25, math.pi * 0.25),
-            yaw=(-math.pi * 0.5, math.pi * 0.5),
+            pos_z=(-0.15, -0.1),
+            roll=(-math.pi * 0.2, math.pi * 0.2),
+            pitch= (-math.pi * 0.2, math.pi * 0.2),
+            yaw=(-math.pi, math.pi),
         ),
         debug_vis=True,
     )
@@ -132,9 +132,10 @@ class ObservationsCfg:
 
         # observation terms (order preserved)
         #base_pos_w = ObsTerm(func=mdp.root_pos_w, noise=Unoise(n_min=-0.05, n_max=0.05))
+        base_rotation = ObsTerm(func=mdp.root_quat_w, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
-        projected_gravity = ObsTerm(func=mdp.projected_gravity, noise=Unoise(n_min=-0.05, n_max=0.05))
+        # projected_gravity = ObsTerm(func=mdp.projected_gravity, noise=Unoise(n_min=-0.05, n_max=0.05))
         joint_pos = ObsTerm(func=mdp.joint_pos, noise=Unoise(n_min=-0.01, n_max=0.01))
         joint_vel = ObsTerm(func=mdp.joint_vel, noise=Unoise(n_min=-1.5, n_max=1.5))
         feet_contacts = ObsTerm(func=mdp.feet_contacts, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
