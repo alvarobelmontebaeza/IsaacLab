@@ -15,7 +15,7 @@ from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import (
 @configclass
 class K1Go1ReachRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 40 # 24
-    max_iterations = 10000
+    max_iterations = 40000
     save_interval = 500
     experiment_name = "k1go1_reach_rough"
     empirical_normalization = True
@@ -47,6 +47,6 @@ class K1Go1ReachFlatPPORunnerCfg(K1Go1ReachRoughPPORunnerCfg):
         super().__post_init__()
 
         self.experiment_name = "k1go1_reach_flat"
-        self.save_interval = 100
+        self.save_interval = 500
         #self.policy.actor_hidden_dims = [128, 128, 128]
         #self.policy.critic_hidden_dims = [128, 128, 128]
