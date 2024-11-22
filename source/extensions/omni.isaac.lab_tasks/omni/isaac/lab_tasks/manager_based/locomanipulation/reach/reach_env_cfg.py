@@ -98,8 +98,8 @@ class CommandsCfg:
         body_name=".*trunk", # Virtual EE frame at the end of the robot arm
         resampling_time_range=(4.0, 4.0),
         ranges=mdp.UniformPoseWorldCommandCfg.Ranges(
-            pos_x=(-0.2, 0.2),
-            pos_y=(-0.2, 0.2),
+            pos_x=(-1.0, 1.0),
+            pos_y=(-0.4, 0.4),
             pos_z=(-0.15, -0.1),
             roll=(-math.pi * 0.2, math.pi * 0.2),
             pitch= (-math.pi * 0.2, math.pi * 0.2),
@@ -150,7 +150,7 @@ class ObservationsCfg:
         '''
         target_pose = ObsTerm(func=mdp.generated_commands, params={"command_name": "ee_pose"})
         # target_pose = ObsTerm(func=mdp.pose_command_cartesian_6d_rotation, params={"command_name": "ee_pose"})
-        # current_pose = ObsTerm(func=mdp.body_pose_cartesian_quaternion_base_frame, params={"asset_cfg": SceneEntityCfg("robot", body_names=".*link_grasping_frame")})
+        # current_pose = ObsTerm(func=mdp.body_pose_cartesian_quaternion_base_frame, params={"asset_cfg": SceneEntityCfg("robot", body_names=".*trunk")})
 
         def __post_init__(self):
             self.enable_corruption = True
@@ -264,7 +264,7 @@ class RewardsCfg:
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
     # leg_action_rate_l2 = RewTerm(func=mdp.leg_action_rate_l2, weight=-0.01)
     # arm_action_rate_l2 = RewTerm(func=mdp.arm_action_rate_l2, weight=-0.02)
-    hip_action_l2 = RewTerm(func=mdp.hip_action_l2, weight=-1.0)
+    hip_action_l2 = RewTerm(func=mdp.hip_action_l2, weight=-0.1)
     even_mass_usage = RewTerm(func=mdp.feet_force_std, weight=-1.0, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
     
     # -- constraints
