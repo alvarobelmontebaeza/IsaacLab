@@ -98,7 +98,7 @@ class CommandsCfg:
         body_name=".*link_grasping_frame", # Virtual EE frame at the end of the robot arm
         resampling_time_range=(4.0, 4.0),
         ranges=mdp.UniformPoseWorldCommandCfg.Ranges(
-            pos_x=(0.4, 0.8),
+            pos_x=(-0.4, 0.8),
             pos_y=(-0.2, 0.2),
             pos_z=(-0.3, 0.3),
             roll=(0.0, 0.0),
@@ -134,7 +134,7 @@ class ObservationsCfg:
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
         joint_pos = ObsTerm(func=mdp.joint_pos, noise=Unoise(n_min=-0.01, n_max=0.01))
         joint_vel = ObsTerm(func=mdp.joint_vel, noise=Unoise(n_min=-1.5, n_max=1.5))
-        feet_contacts = ObsTerm(func=mdp.feet_contacts, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
+        # feet_contacts = ObsTerm(func=mdp.feet_contacts, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
         actions = ObsTerm(func=mdp.last_action)
         '''
         height_scan = ObsTerm(
@@ -250,7 +250,7 @@ class RewardsCfg:
     )
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
     # -- penalties
-    arm_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-7.5e-3, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*K1.*")})
+    arm_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-2.5e-3, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*K1.*")})
     legs_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-7.5e-6, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
     # foot_force_l2 = RewTerm(func=mdp.foot_force_z, weight=-1e-4, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
     # base_lin_acc = RewTerm(func=mdp.body_lin_acc_l2, weight=-0.001, params={"asset_cfg": SceneEntityCfg("robot", body_names=["trunk"])})
