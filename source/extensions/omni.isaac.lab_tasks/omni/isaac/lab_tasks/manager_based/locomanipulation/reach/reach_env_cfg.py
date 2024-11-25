@@ -257,10 +257,10 @@ class RewardsCfg:
     base_ang_acc = RewTerm(func=mdp.body_ang_acc_l2, weight=-0.0005, params={"asset_cfg": SceneEntityCfg("robot", body_names=["trunk"])})
     # dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-4)
     # dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-6)
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.02)
     # leg_action_rate_l2 = RewTerm(func=mdp.leg_action_rate_l2, weight=-0.01)
     # arm_action_rate_l2 = RewTerm(func=mdp.arm_action_rate_l2, weight=-0.02)
-    hip_action_l2 = RewTerm(func=mdp.hip_action_l2, weight=-1.0)
+    hip_action_l2 = RewTerm(func=mdp.hip_action_l2, weight=-0.1)
     even_mass_usage = RewTerm(func=mdp.feet_force_std, weight=-1.0, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
     
     # -- constraints
