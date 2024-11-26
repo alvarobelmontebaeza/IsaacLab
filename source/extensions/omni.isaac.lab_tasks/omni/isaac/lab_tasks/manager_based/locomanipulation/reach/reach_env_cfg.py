@@ -255,7 +255,7 @@ class RewardsCfg:
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
     # -- penalties
     # arm_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-7.5e-3, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*K1.*")})
-    legs_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-7.5e-5, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
+    legs_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-7.5e-4, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
     # foot_force_l2 = RewTerm(func=mdp.foot_force_z, weight=-1e-4, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
     base_lin_acc = RewTerm(func=mdp.body_lin_acc_l2, weight=-0.001, params={"asset_cfg": SceneEntityCfg("robot", body_names=["trunk"])})
     base_ang_acc = RewTerm(func=mdp.body_ang_acc_l2, weight=-0.001, params={"asset_cfg": SceneEntityCfg("robot", body_names=["trunk"])})
