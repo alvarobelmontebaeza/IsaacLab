@@ -167,7 +167,15 @@ K1GO1_CFG = ArticulationCfg(
     ),
     soft_joint_pos_limit_factor=0.95,
     actuators={
-        "base_legs": GO1_ACTUATOR_CFG,
+        "base_legs": DCMotorCfg(
+            joint_names_expr=[".*_hip_joint", ".*_thigh_joint", ".*_calf_joint"],
+            effort_limit=23.5,
+            saturation_effort=23.5,
+            velocity_limit=30.0,
+            stiffness=50.0,
+            damping=1.0,
+            friction=0.0,
+        ),
         "arm_low_torque": ImplicitActuatorCfg(
             joint_names_expr=["K1_shoulder_pan_joint", "K1_wrist_1_joint", "K1_wrist_2_joint", "K1_wrist_3_joint"],
             effort_limit={
