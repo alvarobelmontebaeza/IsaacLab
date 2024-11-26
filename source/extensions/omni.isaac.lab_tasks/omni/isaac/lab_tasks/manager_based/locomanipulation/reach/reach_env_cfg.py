@@ -146,7 +146,7 @@ class ObservationsCfg:
         '''
         target_pose = ObsTerm(func=mdp.generated_commands, params={"command_name": "ee_pose"})
         # target_pose = ObsTerm(func=mdp.pose_command_cartesian_6d_rotation, params={"command_name": "ee_pose"})
-        current_pose = ObsTerm(func=mdp.body_pose_cartesian_quaternion_base_frame, params={"asset_cfg": SceneEntityCfg("robot", body_names=".*link_grasping_frame")})
+        # current_pose = ObsTerm(func=mdp.body_pose_cartesian_quaternion_base_frame, params={"asset_cfg": SceneEntityCfg("robot", body_names=".*link_grasping_frame")})
 
         def __post_init__(self):
             self.enable_corruption = True
@@ -253,14 +253,14 @@ class RewardsCfg:
     arm_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-2.5e-3, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*K1.*")})
     legs_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-7.5e-6, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
     # foot_force_l2 = RewTerm(func=mdp.foot_force_z, weight=-1e-4, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
-    # base_lin_acc = RewTerm(func=mdp.body_lin_acc_l2, weight=-0.001, params={"asset_cfg": SceneEntityCfg("robot", body_names=["trunk"])})
-    # base_ang_acc = RewTerm(func=mdp.body_ang_acc_l2, weight=-0.001, params={"asset_cfg": SceneEntityCfg("robot", body_names=["trunk"])})
+    base_lin_acc = RewTerm(func=mdp.body_lin_acc_l2, weight=-0.0005, params={"asset_cfg": SceneEntityCfg("robot", body_names=["trunk"])})
+    base_ang_acc = RewTerm(func=mdp.body_ang_acc_l2, weight=-0.0005, params={"asset_cfg": SceneEntityCfg("robot", body_names=["trunk"])})
     # dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-4)
     # dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-6)
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
     # leg_action_rate_l2 = RewTerm(func=mdp.leg_action_rate_l2, weight=-0.01)
     # arm_action_rate_l2 = RewTerm(func=mdp.arm_action_rate_l2, weight=-0.02)
-    hip_action_l2 = RewTerm(func=mdp.hip_action_l2, weight=-1.0)
+    hip_action_l2 = RewTerm(func=mdp.hip_action_l2, weight=-0.1)
     even_mass_usage = RewTerm(func=mdp.feet_force_std, weight=-1.0, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
     
     # -- constraints
