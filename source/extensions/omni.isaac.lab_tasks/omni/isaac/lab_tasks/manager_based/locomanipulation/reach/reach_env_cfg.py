@@ -100,9 +100,9 @@ class CommandsCfg:
         ranges=mdp.UniformPoseWorldCommandCfg.Ranges(
             pos_x=(-1.0, 1.0),
             pos_y=(-0.4, 0.4),
-            pos_z=(-0.15, -0.1),
-            roll=(-math.pi * 0.2, math.pi * 0.2),
-            pitch= (-math.pi * 0.2, math.pi * 0.2),
+            pos_z=(-0.2, -0.15),
+            roll=(-math.pi * 0.1, math.pi * 0.1),
+            pitch= (-math.pi * 0.1, math.pi * 0.1),
             yaw=(-math.pi, math.pi),
         ),
         debug_vis=True,
@@ -255,16 +255,16 @@ class RewardsCfg:
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
     # -- penalties
     # arm_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-7.5e-3, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*K1.*")})
-    legs_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-7.5e-4, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
+    legs_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-4e-5, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
     # foot_force_l2 = RewTerm(func=mdp.foot_force_z, weight=-1e-4, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
     base_lin_acc = RewTerm(func=mdp.body_lin_acc_l2, weight=-0.001, params={"asset_cfg": SceneEntityCfg("robot", body_names=["trunk"])})
     base_ang_acc = RewTerm(func=mdp.body_ang_acc_l2, weight=-0.001, params={"asset_cfg": SceneEntityCfg("robot", body_names=["trunk"])})
     # dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-4)
-    # dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-6)
+    # dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.02)
     # leg_action_rate_l2 = RewTerm(func=mdp.leg_action_rate_l2, weight=-0.01)
     # arm_action_rate_l2 = RewTerm(func=mdp.arm_action_rate_l2, weight=-0.02)
-    hip_action_l2 = RewTerm(func=mdp.hip_action_l2, weight=-0.1)
+    hip_action_l2 = RewTerm(func=mdp.hip_action_l2, weight=-0.01)
     even_mass_usage = RewTerm(func=mdp.feet_force_std, weight=-1.0, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
     
     # -- constraints
@@ -298,6 +298,7 @@ class CurriculumCfg:
     """Curriculum terms for the MDP."""
 
     terrain_levels = CurrTerm(func=mdp.terrain_levels_vel)
+    # dof_power = CurrTerm(func=mdp.modify_reward_weight, params={"term_name": "legs_dof_power", "weight": -7.5e-4, "num_steps": 10000})
     #TODO: Add curriculum for the arm pose targets
 
 
