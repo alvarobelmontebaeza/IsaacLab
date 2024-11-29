@@ -17,7 +17,7 @@ Reference: https://github.com/unitreerobotics/unitree_ros
 """
 
 import omni.isaac.lab.sim as sim_utils
-from omni.isaac.lab.actuators import ActuatorNetMLPCfg, DCMotorCfg, ImplicitActuatorCfg
+from omni.isaac.lab.actuators import ActuatorNetMLPCfg, DCMotorCfg, ImplicitActuatorCfg, DelayedPDActuatorCfg
 from omni.isaac.lab.assets.articulation import ArticulationCfg
 from omni.isaac.lab.utils.assets import ISAACLAB_NUCLEUS_DIR, ISAACLAB_ASSETS_DIR
 import math
@@ -167,14 +167,19 @@ K1GO1_CFG = ArticulationCfg(
     ),
     soft_joint_pos_limit_factor=0.95,
     actuators={
-        "base_legs": DCMotorCfg(
+        "base_legs": DelayedPDActuatorCfg(
             joint_names_expr=[".*_hip_joint", ".*_thigh_joint", ".*_calf_joint"],
-            effort_limit=23.5,
-            saturation_effort=23.5,
+            effort_limit={
+                ".*_hip_joint": 23.7,
+                ".*_thigh_joint": 23.7,
+                ".*_calf_joint": 35.5
+            },
             velocity_limit=30.0,
             stiffness=50.0,
             damping=1.0,
             friction=0.0,
+            min_delay=5,
+            max_delay=12,
         ),
         "arm_low_torque": ImplicitActuatorCfg(
             joint_names_expr=["K1_shoulder_pan_joint", "K1_wrist_1_joint", "K1_wrist_2_joint", "K1_wrist_3_joint"],
