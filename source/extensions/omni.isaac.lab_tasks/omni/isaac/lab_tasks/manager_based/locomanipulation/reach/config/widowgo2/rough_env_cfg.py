@@ -62,7 +62,7 @@ class WidowGo2ReachRoughEnvCfg(LocomanipulationReachRoughEnvCfg):
         }
 
         # REWARDS CFG ADJUSTEMENTS
-        self.rewards.arm_dof_power.params["joint_names"] = [
+        self.rewards.arm_dof_power.params["asset_cfg"].joint_names = [
             ".*widow_waist",
             ".*widow_shoulder",
             ".*widow_elbow",
@@ -70,7 +70,7 @@ class WidowGo2ReachRoughEnvCfg(LocomanipulationReachRoughEnvCfg):
             ".*widow_wrist_angle",
             ".*widow_wrist_rotate",
         ]
-        self.rewards.pose_tracking.params["body_names"] = [".*wx250s_ee_gripper_link"]
+        self.rewards.pose_tracking.params["asset_cfg"].body_names = [".*wx250s_ee_gripper_link"]
 
 
 @configclass
