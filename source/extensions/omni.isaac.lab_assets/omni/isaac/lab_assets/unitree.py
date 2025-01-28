@@ -172,15 +172,30 @@ K1GO1_CFG = ArticulationCfg(
             "R[L,R]_thigh_joint": 1.0,
             ".*_calf_joint": -1.5,
             ".*K1_shoulder_pan_joint": 0.0,
-            ".*K1_shoulder_lift_joint": 0.707,
-            ".*K1_elbow_joint": -0.707,
-            ".*K1_wrist_.*": 0.0,            
+            ".*K1_shoulder_lift_joint": 1.4,
+            ".*K1_elbow_joint": -1.4,
+            ".*K1_wrist_1_joint": 0.0,
+            ".*K1_wrist_2_joint": 1.55,
+            ".*K1_wrist_3_joint": 0.0,            
         },
         joint_vel={".*": 0.0},
     ),
     soft_joint_pos_limit_factor=0.95,
     actuators={
-        "base_legs": GO1_ACTUATOR_CFG,
+        "base_legs": DelayedPDActuatorCfg(
+            joint_names_expr=[".*_hip_joint", ".*_thigh_joint", ".*_calf_joint"],
+            effort_limit={
+                ".*_hip_joint": 23.7,
+                ".*_thigh_joint": 23.7,
+                ".*_calf_joint": 35.5
+            },
+            velocity_limit=30.0,
+            stiffness=30.0,
+            damping=1.0,
+            friction=0.0,
+            min_delay=5,
+            max_delay=12,
+        ),        
         "arm_low_torque": ImplicitActuatorCfg(
             joint_names_expr=["K1_shoulder_pan_joint", "K1_wrist_1_joint", "K1_wrist_2_joint", "K1_wrist_3_joint"],
             effort_limit={
@@ -203,6 +218,7 @@ K1GO1_CFG = ArticulationCfg(
             stiffness=5.0,
             damping=1.0,
         ),
+        
     },
 )
 """Configuration of K1 arm + Unitree Go1 using MLP-based actuator model for Go1."""
