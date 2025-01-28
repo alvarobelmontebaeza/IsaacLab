@@ -20,22 +20,34 @@ class WidowGo2ReachRoughEnvCfg(LocomanipulationReachRoughEnvCfg):
         super().__post_init__()
 
         self.scene.robot = WIDOWGO2_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
-        self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/trunk"
+        self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/base"
         # scale down the terrains because the robot is small
         self.scene.terrain.terrain_generator.sub_terrains["boxes"].grid_height_range = (0.025, 0.1)
         self.scene.terrain.terrain_generator.sub_terrains["random_rough"].noise_range = (0.01, 0.06)
         self.scene.terrain.terrain_generator.sub_terrains["random_rough"].noise_step = 0.01
 
+        # COMMANDS CFG ADJUSTEMENTS
+        self.commands.ee_pose.body_name = ".*wx250s_ee_gripper_link"
+
+        # ACTIONS CFG ADJUSTEMENTS
+        self.actions.arm_joint_pos.joint_names = [
+            ".*widow_waist",
+            ".*widow_shoulder",
+            ".*widow_elbow",
+            ".*widow_forearm_roll",
+            ".*widow_wrist_angle",
+            ".*widow_wrist_rotate",
+        ]
         # reduce action scale
         self.actions.leg_joint_pos.scale = 0.25
 
         # event
         self.events.add_base_mass.params["mass_distribution_params"] = (-0.5, 0.5)
-        self.events.add_base_mass.params["asset_cfg"].body_names = "trunk"
+        self.events.add_base_mass.params["asset_cfg"].body_names = "base"
         self.events.add_arm_payload.params["mass_distribution_params"] = (0.0, 0.1)
-        self.events.add_arm_payload.params["asset_cfg"].body_names = ".*link_grasping_frame"
+        self.events.add_arm_payload.params["asset_cfg"].body_names = ".*wx250s_ee_gripper_link"
         
-        self.events.base_external_force_torque.params["asset_cfg"].body_names = "trunk"
+        self.events.base_external_force_torque.params["asset_cfg"].body_names = "base"
         self.events.reset_robot_joints.params["position_range"] = (1.0, 1.0)
         self.events.reset_base.params = {
             "pose_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "yaw": (-3.14, 3.14)},
@@ -48,6 +60,17 @@ class WidowGo2ReachRoughEnvCfg(LocomanipulationReachRoughEnvCfg):
                 "yaw": (0.0, 0.0),
             },
         }
+
+        # REWARDS CFG ADJUSTEMENTS
+        self.rewards.arm_dof_power.params["joint_names"] = [
+            ".*widow_waist",
+            ".*widow_shoulder",
+            ".*widow_elbow",
+            ".*widow_forearm_roll",
+            ".*widow_wrist_angle",
+            ".*widow_wrist_rotate",
+        ]
+        self.rewards.pose_tracking.params["body_names"] = [".*wx250s_ee_gripper_link"]
 
 
 @configclass
