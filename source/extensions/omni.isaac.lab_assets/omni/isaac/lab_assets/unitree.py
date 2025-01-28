@@ -207,6 +207,70 @@ K1GO1_CFG = ArticulationCfg(
 )
 """Configuration of K1 arm + Unitree Go1 using MLP-based actuator model for Go1."""
 
+WIDOWGO2_CFG = ArticulationCfg(
+    spawn=sim_utils.UsdFileCfg(
+        usd_path=f"{ISAACLAB_ASSETS_DIR}/WidowGo2.usd",
+        activate_contact_sensors=True,
+        rigid_props=sim_utils.RigidBodyPropertiesCfg(
+            disable_gravity=False,
+            retain_accelerations=False,
+            linear_damping=0.0,
+            angular_damping=0.0,
+            max_linear_velocity=1000.0,
+            max_angular_velocity=1000.0,
+            max_depenetration_velocity=1.0,
+        ),
+        articulation_props=sim_utils.ArticulationRootPropertiesCfg(
+            enabled_self_collisions=False, solver_position_iteration_count=4, solver_velocity_iteration_count=0
+        ),
+    ),
+    init_state=ArticulationCfg.InitialStateCfg(
+        pos=(0.0, 0.0, 0.35),
+        joint_pos={
+            ".*L_hip_joint": 0.1,
+            ".*R_hip_joint": -0.1,
+            "F[L,R]_thigh_joint": 0.8,
+            "R[L,R]_thigh_joint": 1.0,
+            ".*_calf_joint": -1.5,
+            ".*widow*": 0.0,
+        },
+        joint_vel={".*": 0.0},
+    ),
+    soft_joint_pos_limit_factor=0.95,
+    actuators={
+        "base_legs": DelayedPDActuatorCfg(
+            joint_names_expr=[".*_hip_joint", ".*_thigh_joint", ".*_calf_joint"],
+            effort_limit={
+                ".*_hip_joint": 35.278,
+                ".*_thigh_joint": 35.278,
+                ".*_calf_joint": 44.4
+            },
+            velocity_limit=30.0,
+            stiffness=40.0,
+            damping=1.0,
+            friction=0.0,
+            min_delay=4,
+            max_delay=4,
+        ),
+        "arm": ImplicitActuatorCfg(
+            joint_names_expr=["widow_waist", "widow_shoulder", "widow_elbow", "widow_forearm_roll", "widow_wrist_angle", "widow_wrist_rotate"],
+            effort_limit={
+                "widow_waist": 10.0,
+                "widow_shoulder": 20.0,
+                "widow_elbow": 15.0,
+                "widow_forearm_roll": 2.0,
+                "widow_wrist_angle": 5.0,
+                "widow_wrist_rotate": 1.0,
+            },
+            velocity_limit=3.14,
+            stiffness=5.0,
+            damping=0.5,
+        ),
+    },
+)
+"""Configuration of WidowX wx250s arm + Unitree Go2 using MLP-based actuator model for Go1."""
+
+
 
 
 UNITREE_GO2_CFG = ArticulationCfg(
