@@ -243,7 +243,7 @@ class RewardsCfg:
     pose_tracking = RewTerm(
         func=mdp.pose_command_error_exp_base_frame,
         weight=5.0,
-        params={"command_name": "ee_pose", "asset_cfg": SceneEntityCfg("robot", body_names=[".*link_grasping_frame"])}
+        params={"command_name": "ee_pose", "asset_cfg": SceneEntityCfg("robot", body_names=MISSING)}
     )
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
     # -- penalties
