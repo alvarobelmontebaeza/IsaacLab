@@ -243,11 +243,11 @@ class RewardsCfg:
     pose_tracking = RewTerm(
         func=mdp.pose_command_error_exp_base_frame,
         weight=5.0,
-        params={"command_name": "ee_pose", "asset_cfg": SceneEntityCfg("robot", body_names=MISSING)}
+        params={"command_name": "ee_pose", "asset_cfg": SceneEntityCfg("robot", body_names=[".*ee_link"])}
     )
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
     # -- penalties
-    arm_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-2.5e-3, params={"asset_cfg": SceneEntityCfg("robot", joint_names=MISSING)})
+    arm_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-2.5e-3, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*arm_joints"])})
     legs_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-7.5e-6, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
     # foot_force_l2 = RewTerm(func=mdp.foot_force_z, weight=-1e-4, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
     base_lin_acc = RewTerm(func=mdp.body_lin_acc_l2, weight=-0.0005, params={"asset_cfg": SceneEntityCfg("robot", body_names=["base"])})
