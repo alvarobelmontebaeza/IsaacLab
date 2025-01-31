@@ -42,7 +42,7 @@ class WidowGo2ReachRoughEnvCfg(LocomanipulationReachRoughEnvCfg):
         self.actions.leg_joint_pos.scale = 0.25
 
         # event
-        self.events.add_base_mass.params["mass_distribution_params"] = (-0.5, 0.5)
+        self.events.add_base_mass.params["mass_distribution_params"] = (-1.0, 1.0)
         self.events.add_base_mass.params["asset_cfg"].body_names = "base"
         self.events.add_arm_payload.params["mass_distribution_params"] = (0.0, 0.1)
         self.events.add_arm_payload.params["asset_cfg"].body_names = ".*wx250s_ee_gripper_link"
