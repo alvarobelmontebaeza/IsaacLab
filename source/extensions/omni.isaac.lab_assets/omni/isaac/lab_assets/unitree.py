@@ -232,7 +232,8 @@ WIDOWGO2_CFG = ArticulationCfg(
             "F[L,R]_thigh_joint": 0.8,
             "R[L,R]_thigh_joint": 1.0,
             ".*_calf_joint": -1.5,
-            ".*widow*": 0.0,
+            ".*widow_left_finger": 0.015,
+            ".*widow_right_finger": -0.015,
         },
         joint_vel={".*": 0.0},
     ),
@@ -268,7 +269,7 @@ WIDOWGO2_CFG = ArticulationCfg(
         ),
     },
 )
-"""Configuration of WidowX wx250s arm + Unitree Go2 using MLP-based actuator model for Go1."""
+"""Configuration of WidowX wx250s arm + Unitree Go2 using DelayedPD and Implicit actuator models."""
 
 
 
