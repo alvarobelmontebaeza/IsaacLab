@@ -95,8 +95,8 @@ class CommandsCfg:
         body_name=MISSING, # Virtual EE frame at the end of the robot arm
         resampling_time_range=(4.0, 4.0),
         ranges=mdp.UniformPoseWorldCommandCfg.Ranges(
-            pos_x=(-0.4, 0.8),
-            pos_y=(-0.2, 0.2),
+            pos_x=(-0.8, 0.8),
+            pos_y=(-0.3, 0.3),
             pos_z=(-0.3, 0.3),
             roll=(0.0, 0.0),
             pitch= (-math.pi * 0.25, math.pi * 0.5),
@@ -185,7 +185,7 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names=".*ee_payload"),
-            "mass_distribution_params": (0.0, 1.0),
+            "mass_distribution_params": (0.0, 0.1),
             "operation": "add",
         },
     )
@@ -247,7 +247,7 @@ class RewardsCfg:
     )
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
     # -- penalties
-    arm_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-2.5e-3, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*arm_joints"])})
+    arm_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-5e-3, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*arm_joints"])})
     legs_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-7.5e-6, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
     # foot_force_l2 = RewTerm(func=mdp.foot_force_z, weight=-1e-4, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
     base_lin_acc = RewTerm(func=mdp.body_lin_acc_l2, weight=-0.0005, params={"asset_cfg": SceneEntityCfg("robot", body_names=["base"])})
@@ -261,11 +261,11 @@ class RewardsCfg:
     even_mass_usage = RewTerm(func=mdp.feet_force_std, weight=-1.0, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
     
     # -- constraints
-    root_height = RewTerm(func=mdp.root_height_below_minimum, weight=-1.0, params={"minimum_height": 0.25})
+    # root_height = RewTerm(func=mdp.root_height_below_minimum, weight=-1.0, params={"minimum_height": 0.25})
     undesired_contact = RewTerm(
         func=mdp.undesired_contacts,
         weight=-1.0,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*link.*", ".*thigh", ".*calf"]), "threshold": 1.0},
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*wx250s.*", ".*thigh", ".*calf"]), "threshold": 1.0},
     )
     # -- optional penalties
     dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-10.0)
