@@ -254,7 +254,7 @@ class RewardsCfg:
     base_ang_acc = RewTerm(func=mdp.body_ang_acc_l2, weight=-0.0005, params={"asset_cfg": SceneEntityCfg("robot", body_names=["base"])})
     # dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-4)
     # dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-6)
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.02)
     # leg_action_rate_l2 = RewTerm(func=mdp.leg_action_rate_l2, weight=-0.01)
     # arm_action_rate_l2 = RewTerm(func=mdp.arm_action_rate_l2, weight=-0.02)
     hip_action_l2 = RewTerm(func=mdp.hip_action_l2, weight=-0.1)
