@@ -127,7 +127,7 @@ class ObservationsCfg:
         # observation terms (order preserved)
         #base_pos_w = ObsTerm(func=mdp.root_pos_w, noise=Unoise(n_min=-0.05, n_max=0.05))
         base_rotation = ObsTerm(func=mdp.root_quat_w, noise=Unoise(n_min=-0.1, n_max=0.1))
-        base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
+        # base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
         joint_pos = ObsTerm(func=mdp.joint_pos, noise=Unoise(n_min=-0.01, n_max=0.01))
         joint_vel = ObsTerm(func=mdp.joint_vel, noise=Unoise(n_min=-1.5, n_max=1.5))
@@ -242,7 +242,7 @@ class RewardsCfg:
     # -- task
     pose_tracking = RewTerm(
         func=mdp.pose_command_error_exp_base_frame,
-        weight=5.0,
+        weight=1.0,
         params={"command_name": "ee_pose", "asset_cfg": SceneEntityCfg("robot", body_names=[".*ee_link"])}
     )
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)

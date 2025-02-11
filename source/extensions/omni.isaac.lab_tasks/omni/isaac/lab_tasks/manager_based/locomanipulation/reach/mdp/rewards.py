@@ -410,7 +410,7 @@ def pose_command_error_exp_base_frame(env: ManagerBasedRLEnv, command_name: str,
     pos_rew = torch.exp(-(pos_error**2) / sigma_pos)
     rot_rew = torch.exp(-rot_error / sigma_rot)
 
-    return pos_rew * rot_rew
+    return (pos_rew + pos_rew * rot_rew)
 
 
 def pose_command_error_ln(env: ManagerBasedRLEnv, command_name: str, asset_cfg: SceneEntityCfg) -> torch.Tensor:
