@@ -267,6 +267,34 @@ class RewardTermCfg(ManagerTermBaseCfg):
 
 
 ##
+# Constraint manager.
+##
+
+
+@configclass
+class ConstraintTermCfg(ManagerTermBaseCfg):
+    """Configuration for a constraint term."""
+
+    func: Callable[..., torch.Tensor] = MISSING
+    """The name of the function to be called.
+
+    This function should take the environment object and any other parameters
+    as input and return the constraint signals as torch float tensors of
+    shape (num_envs,).
+    """
+
+    max_p: float = MISSING
+    """The maximum termination probability of the constraint term.
+
+    This is used to compute the termination probability of the constraint term
+
+    Note:
+        If max_p = 1.0, the constraint term is considered a hard constraint. If max_p < 1.0, the constraint term is considered a soft constraint.
+    """
+
+
+
+##
 # Termination manager.
 ##
 
