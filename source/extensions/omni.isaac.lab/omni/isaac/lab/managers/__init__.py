@@ -25,8 +25,10 @@ from .manager_term_cfg import (
     ObservationTermCfg,
     RewardTermCfg,
     TerminationTermCfg,
+    ConstraintTermCfg
 )
 from .observation_manager import ObservationManager
 from .reward_manager import RewardManager
 from .scene_entity_cfg import SceneEntityCfg
 from .termination_manager import TerminationManager
+from .constraint_manager import ConstraintManager
