@@ -363,6 +363,9 @@ class ConstrainedManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         # -- curriculum manager
         info = self.curriculum_manager.reset(env_ids)
         self.extras["log"].update(info)
+        # -- constraint manager
+        info = self.constraint_manager.reset(env_ids)
+        self.extras["log"].update(info)
         # -- command manager
         info = self.command_manager.reset(env_ids)
         self.extras["log"].update(info)
