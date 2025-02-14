@@ -16,7 +16,7 @@ from .manager_base import ManagerBase, ManagerTermBase
 from .manager_term_cfg import ConstraintTermCfg
 
 if TYPE_CHECKING:
-    from omni.isaac.lab.envs import ManagerBasedRLEnv
+    from omni.isaac.lab.envs import ConstrainedManagerBasedRLEnv
 
 
 class ConstraintManager(ManagerBase):
@@ -37,10 +37,10 @@ class ConstraintManager(ManagerBase):
 
     """
 
-    _env: ManagerBasedRLEnv
+    _env: ConstrainedManagerBasedRLEnv
     """The environment instance."""
 
-    def __init__(self, cfg: object, env: ManagerBasedRLEnv):
+    def __init__(self, cfg: object, env: ConstrainedManagerBasedRLEnv):
         """Initialize the constraint manager.
 
         Args:
@@ -49,12 +49,11 @@ class ConstraintManager(ManagerBase):
         """
         super().__init__(cfg, env)
         # Initialize running probs for constraint
-        self.running_maxes = {} # Polyak averaging for max constraint violation
-        self.running_mins = {} # Polyak averaging for min constraint violation
-        self.probs = {} # Termination probabilities for each constraint
+        self.running_maxes = dict() # Polyak averaging for max constraint violation
+        self.running_mins = dict() # Polyak averaging for min constraint violation
+        self.probs = dict() # Termination probabilities for each constraint
         self.tau = 0.95 # Discount factor
         self.min_p = 0.0 # Minimum probability for termination
-
 
         # prepare extra info to store individual constraint term information
         self._episode_sums = dict()
@@ -107,9 +106,7 @@ class ConstraintManager(ManagerBase):
             Dictionary of episodic sum of individual constraint terms.
         """
         # Reset the termination probabilities of the constraint manager
-        self.probs = {}
-        extras = {}
-
+        self.probs.clear()
         
         # resolve environment ids
         if env_ids is None:
