@@ -207,9 +207,9 @@ class ConstraintManager(ManagerBase):
         """Logs the termination probabilities for each constraint."""
         for name in list(self.probs.keys()):
             values = self.probs[name].max(1).values.gt(0.0).float()
-            if "cstr_" + name not in self._episode_sums:
-                self._episode_sums["cstr_" + name] = torch.zeros_like(values)
-            self._episode_sums["cstr_" + name] += values
+            if name not in self._episode_sums:
+                self._episode_sums[name] = torch.zeros_like(values)
+            self._episode_sums[name] += values
     
     def get_names(self):
         """Returns the names of the constraints."""
