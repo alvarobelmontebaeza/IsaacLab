@@ -56,7 +56,26 @@ def cstr_base_height(
 Joint constraints.
 """
 
-def cstr_joint_vel_limits(env: ConstrainedManagerBasedRLEnv, limits: float | dict[str, float], asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+def cstr_joint_pos_limits(env: ConstrainedManagerBasedRLEnv, limits: None | dict[str, tuple[torch.Tensor, torch.Tensor]], asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """Constrain the joint positions to be held within limits
+
+    The termination probability of the constraint will increase with how much the position exceeds the limits.
+    """
+    # extract the used quantities (to enable type-hinting)
+    asset: Articulation = env.scene[asset_cfg.name]
+    if limits is None:
+        limits = dict()
+        for joint in asset_cfg.joint_ids:
+            lower_limit, upper_limit = asset.data.joint_limits[:, joint]
+            limits[joint] = (lower_limit, upper_limit)
+    # compute out of limits constraints
+    positions = asset.data.joint_pos[:, asset_cfg.joint_ids]
+    cstr_position = torch.zeros_like(positions)
+    
+    
+    return cstr_position.clip(min=0.0)
+
+def cstr_joint_vel_limits(env: ConstrainedManagerBasedRLEnv, limits: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Constrain the joint velocities to be held within limits
 
     The termination probability of the constraint will increase with how much the velocity exceeds the limits.
@@ -65,18 +84,11 @@ def cstr_joint_vel_limits(env: ConstrainedManagerBasedRLEnv, limits: float | dic
     asset: Articulation = env.scene[asset_cfg.name]
     # compute out of limits constraints
     velocities = asset.data.joint_vel[:, asset_cfg.joint_ids]
-    if isinstance(limits, float):
-        velocity_limits = torch.ones_like(velocities) * limits
-        cstr_velocity = torch.abs(velocities) - limits
-    elif isinstance(limits, dict):
-        velocity_limits = torch.tensor([limits[joint] for joint in asset_cfg.joint_ids], device=velocities.device)
-        cstr_velocity = torch.abs(velocities) - velocity_limits
-    else:
-        raise ValueError("Invalid type for limits")
+    cstr_velocity = torch.abs(velocities) - limits
     
     return cstr_velocity.clip(min=0.0)
 
-def cstr_joint_acc_limits(env: ConstrainedManagerBasedRLEnv, limits: float | dict[str, float], asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+def cstr_joint_acc_limits(env: ConstrainedManagerBasedRLEnv, limits: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Constrain the joint accelerations to be held within limits
 
     The termination probability of the constraint will increase with how much the acceleration exceeds the limits.
@@ -85,18 +97,11 @@ def cstr_joint_acc_limits(env: ConstrainedManagerBasedRLEnv, limits: float | dic
     asset: Articulation = env.scene[asset_cfg.name]
     # compute out of limits constraints
     accelerations = asset.data.joint_acc[:, asset_cfg.joint_ids]
-    if isinstance(limits, float):
-        acceleration_limits = torch.ones_like(accelerations) * limits
-        cstr_acceleration = torch.abs(accelerations) - limits
-    elif isinstance(limits, dict):
-        acceleration_limits = torch.tensor([limits[joint] for joint in asset_cfg.joint_ids], device=accelerations.device)
-        cstr_acceleration = torch.abs(accelerations) - acceleration_limits
-    else:
-        raise ValueError("Invalid type for limits")
+    cstr_acceleration = torch.abs(accelerations) - limits
     
     return cstr_acceleration.clip(min=0.0)
 
-def cstr_joint_torque_limits(env: ConstrainedManagerBasedRLEnv, limits: float | dict[str, float], asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+def cstr_joint_torque_limits(env: ConstrainedManagerBasedRLEnv, limits: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Constrain the torques to be held within limits
 
     The termination probability of the constraint will increase with how much the torque exceeds the limits.
@@ -104,17 +109,10 @@ def cstr_joint_torque_limits(env: ConstrainedManagerBasedRLEnv, limits: float | 
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
     # compute out of limits constraints
-    torques = asset.data.applied_torque[:, asset_cfg.joint_ids]
-    if isinstance(limits, float):
-        torque_limits = torch.ones_like(torques) * limits
-        cstr_torque = torch.abs(torques) - limits
-    elif isinstance(limits, dict):
-        torque_limits = torch.tensor([limits[joint] for joint in asset_cfg.joint_ids], device=torques.device)
-        cstr_torque = torch.abs(torques) - torque_limits
-    else:
-        raise ValueError("Invalid type for limits")
+    torques = asset.data.computed_torque[:, asset_cfg.joint_ids]
+    cstr_torque = torch.abs(torques) - limits
     
-    return cstr_torque
+    return cstr_torque.clip(min=0.0)
 
 
 """
@@ -123,7 +121,7 @@ Action penalties.
 
 def cstr_action_rate(env: ConstrainedManagerBasedRLEnv, limit: float) -> torch.Tensor:
     """Penalize the rate of change of the actions using L2 squared kernel."""
-    return torch.abs(env.action_manager.action - env.action_manager.prev_action) - limit
+    return (torch.abs(env.action_manager.action - env.action_manager.prev_action) / env.step_dt) - limit
 
 
 """
