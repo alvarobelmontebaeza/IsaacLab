@@ -199,9 +199,10 @@ class ConstrainedManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         ###### CONSTRAINTS ######
         # -- constraint computation
         self.constraint_probs = self.constraint_manager.compute(dt=self.step_dt)
+        self.constraint_probs = self.constraint_probs.clip(0.0, 1.0) # Ensure probabilities are in [0, 1]
 
         # Update rewards based on constraint probabilities
-        self.reward_buf = torch.clip(self.reward_buf * (1.0 - self.constraint_probs), min=0.0)
+        self.reward_buf = self.reward_buf * (1.0 - self.constraint_probs)
 
         # Update resets based on constraint probabilities
         self.reset_buf = self.constraint_probs
