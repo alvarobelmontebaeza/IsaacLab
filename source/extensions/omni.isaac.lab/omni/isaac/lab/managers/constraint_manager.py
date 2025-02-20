@@ -52,6 +52,8 @@ class ConstraintManager(ManagerBase):
         self.running_maxes = dict() # Polyak averaging for max constraint violation
         self.running_mins = dict() # Polyak averaging for min constraint violation
         self.probs = dict() # Termination probabilities for each constraint
+        self.max_p = dict() # Maximum termination probability for each constraint
+        self.raw_constraints = dict()
         self.tau = 0.95 # Discount factor
         self.min_p = 0.0 # Minimum probability for termination
 
@@ -68,14 +70,16 @@ class ConstraintManager(ManagerBase):
 
         # create table for term information
         table = PrettyTable()
-        table.title = "Active Reward Terms"
-        table.field_names = ["Index", "Name", "Max Prob"]
+        table.title = "Active Constraint Terms"
+        table.field_names = ["Index", "Name", "Init. Max P", "Final Max P"]
         # set alignment of table columns
         table.align["Name"] = "l"
-        table.align["Max Prob"] = "r"
+        table.align["Init. Max P"] = "r"
+        table.align["Final Max Prob"] = "r"
+
         # add info on each term
         for index, (name, term_cfg) in enumerate(zip(self._term_names, self._term_cfgs)):
-            table.add_row([index, name, term_cfg.max_p])
+            table.add_row([index, name, term_cfg.init_max_p, term_cfg.final_max_p])
         # convert table to string
         msg += table.get_string()
         msg += "\n"
@@ -107,6 +111,7 @@ class ConstraintManager(ManagerBase):
         """
         # Reset the termination probabilities of the constraint manager
         self.probs.clear()
+        self.raw_constraints.clear()
         
         # resolve environment ids
         if env_ids is None:
@@ -141,12 +146,13 @@ class ConstraintManager(ManagerBase):
         """
         # reset computation
         self._constraint_buf[:] = 0.0
+        sqrt_func = lambda x: x.clamp(min=0.0).sqrt()
         # iterate over all the constraint terms
         for name, term_cfg in zip(self._term_names, self._term_cfgs):
             # compute the constraint signal
             constraint = term_cfg.func(self._env, **term_cfg.params) #* dt
             # obtain the termination probability for the constraint
-            self.add(name, constraint, term_cfg.max_p)
+            self.add(name, sqrt_func(constraint), term_cfg.max_p)
         
         # Log the termination probabilities for each constraint
         self.log_all()
@@ -171,6 +177,10 @@ class ConstraintManager(ManagerBase):
         # Ensure constraint is 2-dimensional even with a single element
         if len(constraint.size()) == 1:
             constraint = constraint.unsqueeze(1)
+        
+        # Check that max_p is not 0
+        if max_p == 0.0:
+            max_p = self.get_term_cfg(name).init_max_p
 
         # Get the maximum constraint violation for the current step
         constraint_max = constraint.max(dim=0, keepdim=True)[0].clamp(min=1e-6)
@@ -182,6 +192,9 @@ class ConstraintManager(ManagerBase):
             self.running_maxes[name] = (
                 self.tau * self.running_maxes[name] + (1.0 - self.tau) * constraint_max
             )
+        
+        # Store raw constraint value
+        self.raw_constraints[name] = constraint
 
         # Get samples for which there is a constraint violation
         mask = constraint > 0.0
@@ -196,12 +209,25 @@ class ConstraintManager(ManagerBase):
             max=1.0,
         ) * (max_p - self.min_p)
         self.probs[name] = probs
+        self.max_p[name] = torch.tensor(max_p, device=self.device).repeat(constraint.shape[1])
 
     def get_probs(self) -> torch.Tensor:
         """Returns the termination probabilities due to constraint violations."""
         probs = torch.cat(list(self.probs.values()), dim=1)
         probs = probs.max(1).values
         return probs
+    
+    def get_raw_constraints(self) -> torch.Tensor:
+        """Returns the raw constraint violations."""
+        return torch.cat(list(self.raw_constraints.values()), dim=1)
+    
+    def get_running_maxes(self) -> torch.Tensor:
+        """Returns the running maximum constraint violations."""
+        return torch.cat(list(self.running_maxes.values()), dim=1)
+    
+    def get_max_p(self) -> torch.Tensor:
+        """Returns the maximum termination probabilities for each constraint."""
+        return torch.cat(list(self.max_p.values()), dim=1)
     
     def log_all(self):
         """Logs the termination probabilities for each constraint."""
@@ -215,9 +241,10 @@ class ConstraintManager(ManagerBase):
         """Returns the names of the constraints."""
         return list(self.probs.keys())
     
-    def get_str(self):
+    def get_str(self, names=None):
         """Get a debug string with constraints names and their average termination probabilities"""
-        names = list(self.probs.keys())
+        if names is None:
+            names = list(self.probs.keys())
         txt = ""
         for name in names:
             txt += " {}: {}".format(
