@@ -56,26 +56,22 @@ def cstr_base_height(
 Joint constraints.
 """
 
-def cstr_joint_pos_limits(env: ConstrainedManagerBasedRLEnv, limits: None | dict[str, tuple[torch.Tensor, torch.Tensor]], asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+def cstr_joint_pos_limits(env: ConstrainedManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Constrain the joint positions to be held within limits
 
     The termination probability of the constraint will increase with how much the position exceeds the limits.
     """
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
-    if limits is None:
-        limits = dict()
-        for joint in asset_cfg.joint_ids:
-            lower_limit, upper_limit = asset.data.joint_limits[:, joint]
-            limits[joint] = (lower_limit, upper_limit)
     # compute out of limits constraints
     positions = asset.data.joint_pos[:, asset_cfg.joint_ids]
-    cstr_position = torch.zeros_like(positions)
+    joint_limits = asset.data.soft_joint_pos_limits[:, asset_cfg.joint_ids]
+    upper_lim, lower_lim = joint_limits[:,:,1], joint_limits[:,:,0]
+    cstr_position = torch.max(positions - upper_lim, lower_lim - positions)    
     
-    
-    return cstr_position.clip(min=0.0)
+    return cstr_position
 
-def cstr_joint_vel_limits(env: ConstrainedManagerBasedRLEnv, limits: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+def cstr_joint_vel_limits(env: ConstrainedManagerBasedRLEnv, limits: None | float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Constrain the joint velocities to be held within limits
 
     The termination probability of the constraint will increase with how much the velocity exceeds the limits.
@@ -86,7 +82,7 @@ def cstr_joint_vel_limits(env: ConstrainedManagerBasedRLEnv, limits: float, asse
     velocities = asset.data.joint_vel[:, asset_cfg.joint_ids]
     cstr_velocity = torch.abs(velocities) - limits
     
-    return cstr_velocity.clip(min=0.0)
+    return cstr_velocity
 
 def cstr_joint_acc_limits(env: ConstrainedManagerBasedRLEnv, limits: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Constrain the joint accelerations to be held within limits
@@ -99,7 +95,7 @@ def cstr_joint_acc_limits(env: ConstrainedManagerBasedRLEnv, limits: float, asse
     accelerations = asset.data.joint_acc[:, asset_cfg.joint_ids]
     cstr_acceleration = torch.abs(accelerations) - limits
     
-    return cstr_acceleration.clip(min=0.0)
+    return cstr_acceleration
 
 def cstr_joint_torque_limits(env: ConstrainedManagerBasedRLEnv, limits: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Constrain the torques to be held within limits
@@ -112,16 +108,46 @@ def cstr_joint_torque_limits(env: ConstrainedManagerBasedRLEnv, limits: float, a
     torques = asset.data.computed_torque[:, asset_cfg.joint_ids]
     cstr_torque = torch.abs(torques) - limits
     
-    return cstr_torque.clip(min=0.0)
+    return cstr_torque
 
 
 """
 Action penalties.
 """
 
+def cstr_action_limits(env: ConstrainedManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """Constrain the actions to be held within limits
+
+    The termination probability of the constraint will increase with how much the action exceeds the limits.
+    """
+    # extract the used quantities (to enable type-hinting)
+    asset: Articulation = env.scene[asset_cfg.name]
+    # compute out of limits constraints
+    joint_limits = asset.data.soft_joint_pos_limits[:, asset_cfg.joint_ids]
+    upper_lim, lower_lim = joint_limits[:,:,1], joint_limits[:,:,0]
+    cstr_action = torch.max(env.action_manager.action[:, :18] - upper_lim, lower_lim - env.action_manager.action[:, :18])
+
+    return cstr_action
+
 def cstr_action_rate(env: ConstrainedManagerBasedRLEnv, limit: float) -> torch.Tensor:
     """Penalize the rate of change of the actions using L2 squared kernel."""
     return (torch.abs(env.action_manager.action - env.action_manager.prev_action) / env.step_dt) - limit
+
+def cstr_joint_deviation(env: ConstrainedManagerBasedRLEnv, limit: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """Constrain the joints to be within a certain distance from their default positions.
+
+    The termination probability of the constraint will increase with how much the joint positions deviate from the default positions.
+    """
+    # extract the used quantities (to enable type-hinting)
+    asset: Articulation = env.scene[asset_cfg.name]
+    # compute the distance from default positions
+    default_joint_pos = asset.data.default_joint_pos[:, asset_cfg.joint_ids]
+    joint_pos = asset.data.joint_pos[:, asset_cfg.joint_ids]
+    distance_from_default = torch.abs(joint_pos - default_joint_pos)
+    # compute the constraint violation
+    cstr_distance = distance_from_default - limit
+        
+    return cstr_distance
 
 
 """
@@ -149,3 +175,30 @@ def cstr_contact_forces(env: ConstrainedManagerBasedRLEnv, limit: float, sensor_
     violation = torch.max(torch.norm(net_contact_forces[:, :, sensor_cfg.body_ids], dim=-1), dim=1)[0] - limit
     # compute the penalty
     return violation
+
+def cstr_foot_contact_force(env: ConstrainedManagerBasedRLEnv, limit: float, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+    """Penalize foot contact forces as the amount of violations of the net contact force."""
+    # extract the used quantities (to enable type-hinting)
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    net_contact_forces = contact_sensor.data.net_forces_w_history
+    # Compute the norm of the forces of each foot
+    f_norm = torch.norm(net_contact_forces[:, :, sensor_cfg.body_ids], dim=-1)
+    f_norm = torch.max(f_norm, dim=1)[0]
+
+    return f_norm - limit
+
+def cstr_foot_stumble(env: ConstrainedManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, coeff: float = 4.0) -> torch.Tensor:
+    """Penalize foot stumble as the amount of violations of the net contact force."""
+    # extract the used quantities (to enable type-hinting)
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    net_contact_forces = contact_sensor.data.net_forces_w_history
+    # Extract the forces in different axis and compute the norm
+    f_xy = torch.norm(net_contact_forces[:, :, sensor_cfg.body_ids, :2], dim=-1)
+    f_z = torch.abs(net_contact_forces[:, :, sensor_cfg.body_ids, 2])
+    # Get the max value in history
+    f_xy = torch.max(f_xy, dim=1)[0]
+    f_z = torch.max(f_z, dim=1)[0]
+    # Compute the constraint
+    cstr_stumble = f_xy - (f_z * coeff)
+
+    return cstr_stumble
