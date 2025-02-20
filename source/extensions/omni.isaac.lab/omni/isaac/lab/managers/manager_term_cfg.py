@@ -282,15 +282,21 @@ class ConstraintTermCfg(ManagerTermBaseCfg):
     as input and return the constraint signals as torch float tensors of
     shape (num_envs,).
     """
+    init_max_p: float = MISSING
+    """The initial maximum probability of termination.
 
-    max_p: float = MISSING
-    """The maximum termination probability of the constraint term.
-
-    This is used to compute the termination probability of the constraint term
+    This is used to compute the termination probability of the constraint term at the beginning of the training run.
 
     Note:
-        If max_p = 1.0, the constraint term is considered a hard constraint. If max_p < 1.0, the constraint term is considered a soft constraint.
+        If init_max_p = 1.0, the constraint term is considered a hard constraint. If init_max_p < 1.0, the constraint term is considered a soft constraint.
     """
+    final_max_p: float = MISSING
+    """The final maximum probability of termination.
+
+    This is the termination probability of the constraint term at the end of the training run, linearly increasing through the training process.
+    """
+    max_p = 0.0
+    """The maximum probability of termination at a given step"""
 
 
 
