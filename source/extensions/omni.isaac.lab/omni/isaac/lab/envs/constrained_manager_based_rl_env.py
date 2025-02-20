@@ -206,7 +206,13 @@ class ConstrainedManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
 
         # Update resets based on constraint probabilities
         self.reset_buf = self.constraint_probs
+        self.extras["reset_buf"] = self.reset_buf
         self.reset_env_buf = self.reset_time_outs | self.reset_terminated
+
+        # Store info 
+        self.extras["true_dones"] = self.reset_env_buf
+        self.extras["truncated"] = self.reset_time_outs
+        self.extras["raw_constraints"] = self.constraint_manager.get_raw_constraints()
 
         #########################
 
