@@ -68,3 +68,6 @@ class CstrWidowGo2ReachFlatEnvCfg_PLAY(CstrWidowGo2ReachFlatEnvCfg):
         # remove random pushing event
         self.events.base_external_force_torque = None
         self.events.push_robot = None
+        # no curriculum
+        self.curriculum.terrain_levels = None
+        self.curriculum.constraint_max_probs = None

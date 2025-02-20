@@ -147,7 +147,10 @@ class CstrWidowGo2ReachRoughEnvCfg(CstrLocomanipulationReachRoughEnvCfg):
 
         # REWARDS CFG ADJUSTEMENTS
         self.rewards.pose_tracking.params["asset_cfg"].body_names = [".*wx250s_ee_gripper_link"]
+        # self.rewards.arm_dof_power.params["asset_cfg"].joint_names = [".*widow_waist", ".*widow_shoulder", ".*widow_elbow", ".*widow_forearm_roll", ".*widow_wrist_angle", ".*widow_wrist_rotate"]
 
+        # CONSTRAINTS CFG ADJUSTEMENTS
+        self.constraints.cstr_arm_contact.params["sensor_cfg"].body_names = [".*wx250s.*"]
 
 @configclass
 class CstrWidowGo2ReachRoughEnvCfg_PLAY(CstrWidowGo2ReachRoughEnvCfg):
@@ -171,3 +174,5 @@ class CstrWidowGo2ReachRoughEnvCfg_PLAY(CstrWidowGo2ReachRoughEnvCfg):
         # remove random pushing event
         self.events.base_external_force_torque = None
         self.events.push_robot = None
+        # reomve curriculum
+        self.curriculum.constraint_max_probs = None
