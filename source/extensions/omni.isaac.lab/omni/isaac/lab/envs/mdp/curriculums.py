@@ -35,7 +35,7 @@ def modify_reward_weight(env: ManagerBasedRLEnv, env_ids: Sequence[int], term_na
         term_cfg.weight = weight
         env.reward_manager.set_term_cfg(term_name, term_cfg)
 
-def modify_constraint_max_prob(env: ConstrainedManagerBasedRLEnv, env_ids: Sequence[int]):
+def modify_constraint_max_prob(env: ConstrainedManagerBasedRLEnv, env_ids: Sequence[int], max_p_epoch_factor: float = 0.5):
     """Curriculum that modifies the maximum probability of a constraint a given number of steps.
 
     Args:
@@ -45,10 +45,10 @@ def modify_constraint_max_prob(env: ConstrainedManagerBasedRLEnv, env_ids: Seque
         max_prob: The maximum probability of the constraint term.
         num_steps: The number of steps after which the change should be applied.
     """
-    if env.common_step_counter > 0:
-        max_epochs = env.extras["max_epochs"]
+    if 'current_epoch' in env.extras:
+        max_p_epoch = env.extras["max_epochs"] * max_p_epoch_factor
         current_epoch = env.extras["current_epoch"]
-        coeff = current_epoch / max_epochs
+        coeff = min((current_epoch / max_p_epoch), 1.0)
     else:
         coeff = 0.0
     # Get term cfg
