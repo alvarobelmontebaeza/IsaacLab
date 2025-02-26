@@ -39,8 +39,8 @@ def cstr_flat_orientation(env: ConstrainedManagerBasedRLEnv, limit: float, asset
     return torch.norm(base_orientation, dim=1) - limit
 
 
-def cstr_base_height(
-    env: ConstrainedManagerBasedRLEnv, target_height: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+def cstr_min_base_height(
+    env: ConstrainedManagerBasedRLEnv, min_height: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
 ) -> torch.Tensor:
     """Penalize asset height from its target using L2 squared kernel.
 
@@ -50,7 +50,7 @@ def cstr_base_height(
     # extract the used quantities (to enable type-hinting)
     asset: RigidObject = env.scene[asset_cfg.name]
 
-    return asset.data.root_pos_w[:, 2] - target_height
+    return asset.data.root_pos_w[:, 2] - min_height
 
 """
 Joint constraints.
@@ -65,7 +65,8 @@ def cstr_joint_pos_limits(env: ConstrainedManagerBasedRLEnv, asset_cfg: SceneEnt
     asset: Articulation = env.scene[asset_cfg.name]
     # compute out of limits constraints
     positions = asset.data.joint_pos[:, asset_cfg.joint_ids]
-    joint_limits = asset.data.soft_joint_pos_limits[:, asset_cfg.joint_ids]
+    joint_limits = asset.data.joint_limits[:, asset_cfg.joint_ids]
+    # joint_limits = asset.data.soft_joint_pos_limits[:, asset_cfg.joint_ids]
     upper_lim, lower_lim = joint_limits[:,:,1], joint_limits[:,:,0]
     cstr_position = torch.max(positions - upper_lim, lower_lim - positions)    
     
@@ -105,7 +106,7 @@ def cstr_joint_torque_limits(env: ConstrainedManagerBasedRLEnv, limits: float, a
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
     # compute out of limits constraints
-    torques = asset.data.computed_torque[:, asset_cfg.joint_ids]
+    torques = asset.data.applied_torque[:, asset_cfg.joint_ids]
     cstr_torque = torch.abs(torques) - limits
     
     return cstr_torque
@@ -183,9 +184,9 @@ def cstr_foot_contact_force(env: ConstrainedManagerBasedRLEnv, limit: float, sen
     net_contact_forces = contact_sensor.data.net_forces_w_history
     # Compute the norm of the forces of each foot
     f_norm = torch.norm(net_contact_forces[:, :, sensor_cfg.body_ids], dim=-1)
-    f_norm = torch.max(f_norm, dim=1)[0]
+    f_norm_max = torch.max(f_norm, dim=1)[0]
 
-    return f_norm - limit
+    return f_norm_max - limit
 
 def cstr_foot_stumble(env: ConstrainedManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, coeff: float = 4.0) -> torch.Tensor:
     """Penalize foot stumble as the amount of violations of the net contact force."""
