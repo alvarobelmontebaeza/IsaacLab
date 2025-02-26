@@ -401,17 +401,91 @@ def pose_command_error_exp_base_frame(env: ManagerBasedRLEnv, command_name: str,
     )
 
     # Compute the position and orientation errors
-    pos_error = torch.sum(torch.square(curr_pos_b - des_pos_b), dim=1).sqrt()
+    pos_error = torch.sum(torch.square(curr_pos_b - des_pos_b), dim=1)
     rot_error = quat_error_magnitude(curr_quat_b, des_quat_b)
 
     # Obtain the sigma values for position and orientation
     sigma_pos, sigma_rot = 0.05, 1.0#_get_sigmas(pos_error, rot_error)
 
-    pos_rew = torch.exp(-(pos_error**2) / sigma_pos)
+    pos_rew = torch.exp(-pos_error / sigma_pos)
     rot_rew = torch.exp(-rot_error / sigma_rot)
 
-    return (pos_rew + pos_rew * rot_rew)
+    # perform microenhancement
+    # pos_rew_enhanced = pos_rew + torch.pow(pos_rew, 3)
+    # rot_rew_enhanced = rot_rew + torch.pow(rot_rew, 3 )
 
+    return (pos_rew * rot_rew)
+
+def pose_command_error_exp_base_frame_radius(env: ManagerBasedRLEnv, command_name: str, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+    """
+    Computes the reward based on the error between the desired and current poses of a specified asset.
+
+    Args:
+        env (ManagerBasedRLEnv): The environment containing the scene and command manager.
+        command_name (str): The name of the command specifying the desired pose.
+        asset_cfg (SceneEntityCfg): Configuration of the asset for which the pose error is computed.
+
+    Returns:
+        torch.Tensor: The computed reward based on the position and orientation errors.
+    """
+    # extract the asset (to enable type hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+    command = env.command_manager.get_command(command_name)
+    # obtain the desired and current poses    
+    des_pos_b, des_quat_b = command[:, :3], command[:, 3:]
+    curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
+    curr_quat_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], 3:7]  # type: ignore
+    curr_root_pos_w, curr_root_quat_w = asset.data.root_state_w[:, :3], asset.data.root_state_w[:, 3:7]
+    # Convert to base frame
+    curr_pos_b, curr_quat_b = subtract_frame_transforms(
+        curr_root_pos_w,
+        curr_root_quat_w,
+        curr_pos_w,
+        curr_quat_w
+    )
+
+    # Compute the position and orientation errors
+    pos_error = torch.sum(torch.square(curr_pos_b - des_pos_b), dim=1)
+    rot_error = quat_error_magnitude(curr_quat_b, des_quat_b)
+
+    # Obtain the sigma values for position and orientation
+    sigma_pos, sigma_rot = 0.05, 1.0#_get_sigmas(pos_error, rot_error)
+
+    pos_rew = torch.exp(-pos_error / sigma_pos)
+    rot_rew = torch.exp(-rot_error / sigma_rot)
+
+    pose_rew = (pos_rew * rot_rew)
+
+    # Obtain gating to encourage base to move closer to desired position
+    gating_k = 10.0
+    radius = 0.4
+    base_dist = torch.norm(des_pos_b[:, :2], dim=1)
+    gate = 1.0 / (1.0 + torch.exp(gating_k * (base_dist - radius)))
+
+    return gate * pose_rew
+
+
+def low_power(env: ManagerBasedRLEnv, max_power: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """
+    Calculate the penalty for low power consumption of the joints.
+
+    Args:
+        env (ManagerBasedRLEnv): The environment containing the asset.
+        asset_cfg (SceneEntityCfg, optional): Configuration for the asset. Defaults to SceneEntityCfg("robot").
+
+    Returns:
+        torch.Tensor: The penalty for low power consumption of the joints.
+    """
+    # extract the used quantities (to enable type-hinting)
+    asset: Articulation = env.scene[asset_cfg.name]
+    torques = asset.data.applied_torque[:, asset_cfg.joint_ids]
+    joint_vel = asset.data.joint_vel[:, asset_cfg.joint_ids]
+    power = torch.abs(torques * joint_vel)
+    total_power = torch.sum(power, dim=1)
+
+    # Exponential decay reward
+    scale = max_power * 0.5
+    return torch.exp(-total_power / scale)
 
 def pose_command_error_ln(env: ManagerBasedRLEnv, command_name: str, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     """
