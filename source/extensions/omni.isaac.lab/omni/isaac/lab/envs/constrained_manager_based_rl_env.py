@@ -202,11 +202,12 @@ class ConstrainedManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         self.constraint_probs = self.constraint_probs.clip(0.0, 1.0) # Ensure probabilities are in [0, 1]
 
         # Update rewards based on constraint probabilities
-        self.reward_buf = self.reward_buf * (1.0 - self.constraint_probs)
+        self.reward_buf *= (1.0 - self.constraint_probs)
 
         # Update resets based on constraint probabilities
         self.reset_buf = self.constraint_probs
         self.extras["reset_buf"] = self.reset_buf
+        self.reset_terminated |= (self.reset_buf >= 1.0)
         self.reset_env_buf = self.reset_time_outs | self.reset_terminated
 
         # Store info 
