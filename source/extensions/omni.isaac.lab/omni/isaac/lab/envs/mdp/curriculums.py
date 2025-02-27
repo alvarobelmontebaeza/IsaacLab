@@ -50,7 +50,7 @@ def modify_constraint_max_prob(env: ConstrainedManagerBasedRLEnv, env_ids: Seque
         current_epoch = env.extras["current_epoch"]
         coeff = min((current_epoch / max_p_epoch), 1.0)
     else:
-        coeff = 0.0
+        coeff = 1.0
     # Get term cfg
     for term_name in env.constraint_manager.get_names():
         term_cfg = env.constraint_manager.get_term_cfg(term_name)
