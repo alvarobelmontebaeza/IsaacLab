@@ -416,7 +416,7 @@ def pose_command_error_exp_base_frame(env: ManagerBasedRLEnv, command_name: str,
 
     return (pos_rew * rot_rew)
 
-def pose_command_error_exp_base_frame_radius(env: ManagerBasedRLEnv, command_name: str, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+def pose_command_error_exp_base_frame_radius(env: ManagerBasedRLEnv, command_name: str, radius: float, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     """
     Computes the reward based on the error between the desired and current poses of a specified asset.
 
@@ -457,8 +457,7 @@ def pose_command_error_exp_base_frame_radius(env: ManagerBasedRLEnv, command_nam
     pose_rew = (pos_rew * rot_rew)
 
     # Obtain gating to encourage base to move closer to desired position
-    gating_k = 10.0
-    radius = 0.4
+    gating_k = 5.0
     base_dist = torch.norm(des_pos_b[:, :2], dim=1)
     gate = 1.0 / (1.0 + torch.exp(gating_k * (base_dist - radius)))
 
