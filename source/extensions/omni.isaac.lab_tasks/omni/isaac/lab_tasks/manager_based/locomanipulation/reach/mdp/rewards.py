@@ -306,42 +306,43 @@ class progress_reward(ManagerTermBase):
         self.potentials[:] = -torch.norm(to_target_pos, p=2, dim=-1) / env.step_dt
 
         return self.potentials - self.prev_potentials
+
 def _get_sigmas(epsilon_pos, epsilon_orn):
     """
-    Function to get sigma values for position and orientation based on position and orientation errors.
+    Function to get sigma values for position and orientation based on errors for locomanipulation.
+    Tailored for base distances 0-1 m and arm reach ~0.5 m.
     
     Parameters:
-    - epsilon_pos (torch.Tensor): Tensor of position errors, shape (N,).
-    - epsilon_orn (torch.Tensor): Tensor of orientation errors, shape (N,).
+    - epsilon_pos (torch.Tensor): Tensor of position errors (meters), shape (N,), range 0-1 m.
+    - epsilon_orn (torch.Tensor): Tensor of orientation errors (radians), shape (N,), range 0-1.57 rad.
     
     Returns:
-    - sigma_pos (torch.Tensor): Tensor of sigma values for position, shape (N,).
-    - sigma_orn (torch.Tensor): Tensor of sigma values for orientation, shape (N,).
+    - sigma_pos (torch.Tensor): Tensor of sigma values for position (meters), shape (N,).
+    - sigma_orn (torch.Tensor): Tensor of sigma values for orientation (radians), shape (N,).
     """
-    # Define thresholds and corresponding sigma values for position
-    pos_thresholds = [100.0, 1.0, 0.8, 0.5, 0.2, 0.1, 0.05]
-    sigma_pos_values = [2.0, 1.0, 0.5, 0.1, 0.05, 0.01, 0.005]
+    # Define thresholds and corresponding sigma values for position (meters)
+    pos_thresholds = [1.0, 0.75, 0.5, 0.25, 0.1, 0.05]
+    sigma_pos_values = [0.5, 0.4, 0.25, 0.15, 0.05, 0.025]
 
-    # Define thresholds and corresponding sigma values for orientation
-    orn_thresholds = [100.0, 1.0, 0.8, 0.6, 0.2]
-    sigma_orn_values = [4.0, 2.0, 1.0, 0.5, 0.1]
+    # Define thresholds and corresponding sigma values for orientation (radians)
+    orn_thresholds = [1.57, 1.0, 0.5, 0.25, 0.1]
+    sigma_orn_values = [0.5, 0.4, 0.25, 0.15, 0.05]
 
-    # Initialize tensors for sigma values (default to the smallest value)
+    # Initialize tensors with the largest sigma (for errors >= max threshold)
     sigma_pos = torch.full_like(epsilon_pos, sigma_pos_values[0])
     sigma_orn = torch.full_like(epsilon_orn, sigma_orn_values[0])
 
     # Assign sigma values for position errors based on thresholds
-    for i, threshold in enumerate(pos_thresholds):
+    for threshold, sigma in zip(pos_thresholds, sigma_pos_values):
         mask = epsilon_pos < threshold
-        sigma_pos[mask] = sigma_pos_values[i]
+        sigma_pos[mask] = sigma
 
     # Assign sigma values for orientation errors based on thresholds
-    for i, threshold in enumerate(orn_thresholds):
+    for threshold, sigma in zip(orn_thresholds, sigma_orn_values):
         mask = epsilon_orn < threshold
-        sigma_orn[mask] = sigma_orn_values[i]
+        sigma_orn[mask] = sigma
 
     return sigma_pos, sigma_orn
-
 def pose_command_error_exp(env: ManagerBasedRLEnv, command_name: str, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     """
     Computes the reward based on the error between the desired and current poses of a specified asset.
@@ -416,7 +417,7 @@ def pose_command_error_exp_base_frame(env: ManagerBasedRLEnv, command_name: str,
 
     return (pos_rew * rot_rew)
 
-def pose_command_error_exp_base_frame_radius(env: ManagerBasedRLEnv, command_name: str, radius: float, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+def pose_command_error_exp_base_frame_radius(env: ManagerBasedRLEnv, command_name: str, radius: float, asset_cfg: SceneEntityCfg, sigmas: str = "fixed") -> torch.Tensor:
     """
     Computes the reward based on the error between the desired and current poses of a specified asset.
 
@@ -449,7 +450,10 @@ def pose_command_error_exp_base_frame_radius(env: ManagerBasedRLEnv, command_nam
     rot_error = quat_error_magnitude(curr_quat_b, des_quat_b)
 
     # Obtain the sigma values for position and orientation
-    sigma_pos, sigma_rot = 0.05, 1.0#_get_sigmas(pos_error, rot_error)
+    if sigmas == "fixed":
+        sigma_pos, sigma_rot = 0.05, 1.0
+    else:
+        sigma_pos, sigma_rot = _get_sigmas(pos_error, rot_error)
 
     pos_rew = torch.exp(-pos_error / sigma_pos)
     rot_rew = torch.exp(-rot_error / sigma_rot)
@@ -459,9 +463,11 @@ def pose_command_error_exp_base_frame_radius(env: ManagerBasedRLEnv, command_nam
     # Obtain gating to encourage base to move closer to desired position
     gating_k = 5.0
     base_dist = torch.norm(des_pos_b[:, :2], dim=1)
+    rew_base_dist = torch.exp(-base_dist / 0.25)
     gate = 1.0 / (1.0 + torch.exp(gating_k * (base_dist - radius)))
+    gate = torch.clamp(gate, 0.0, 1.0)
 
-    return gate * pose_rew
+    return gate * pose_rew + (1 - gate) * rew_base_dist
 
 
 def low_power(env: ManagerBasedRLEnv, max_power: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
