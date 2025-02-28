@@ -460,11 +460,14 @@ def pose_command_error_exp_base_frame_radius(env: ManagerBasedRLEnv, command_nam
 
     pose_rew = (pos_rew * rot_rew)
 
-    # Obtain gating to encourage base to move closer to desired position
-    gating_k = 5.0
+    # Compute locomotion reward to encourage moving towards the desired position before using manipulation
     base_dist = torch.norm(des_pos_b[:, :2], dim=1)
     rew_base_dist = torch.exp(-base_dist / 0.25)
-    gate = 1.0 / (1.0 + torch.exp(gating_k * (base_dist - radius)))
+
+    # Obtain gating to encourage base to move closer to desired position
+    gating_k = 5.0
+    mu = l = 2.0 * radius
+    gate = 1.0 / (1.0 + torch.exp(-gating_k * (base_dist - mu)/l))
     gate = torch.clamp(gate, 0.0, 1.0)
 
     return gate * pose_rew + (1 - gate) * rew_base_dist
