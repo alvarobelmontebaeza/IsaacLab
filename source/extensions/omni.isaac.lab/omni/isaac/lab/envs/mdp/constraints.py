@@ -111,7 +111,6 @@ def cstr_joint_torque_limits(env: ConstrainedManagerBasedRLEnv, limits: float, a
     
     return cstr_torque
 
-
 """
 Action penalties.
 """
@@ -149,6 +148,35 @@ def cstr_joint_deviation(env: ConstrainedManagerBasedRLEnv, limit: float, asset_
     cstr_distance = distance_from_default - limit
         
     return cstr_distance
+
+def cstr_no_movement(env: ConstrainedManagerBasedRLEnv, limit: float, command_name: str, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """
+    Compute a constraint that penalizes movement beyond a specified limit.
+    Args:
+        env (ConstrainedManagerBasedRLEnv): The environment containing the scene and command manager.
+        limit (float): The distance limit beyond which movement is penalized.
+        command_name (str): The name of the command to retrieve the desired position.
+        asset_cfg (SceneEntityCfg, optional): Configuration for the scene entity (default is a robot).
+    Returns:
+        torch.Tensor: A tensor representing the constraint violation, where movement beyond the limit is penalized.
+    """
+    # extract the used quantities (to enable type-hinting)
+    asset: Articulation = env.scene[asset_cfg.name]
+    # compute the distance from the target
+    command = env.command_manager.get_command(command_name)
+    des_pos_b = command[:, :2] # Desired XY pos of the EE in the base frame
+    distance = torch.norm(des_pos_b, dim=1)
+    
+    # Compute distance from default joint positions
+    default_joint_pos = asset.data.default_joint_pos[:, asset_cfg.joint_ids]
+    joint_pos = asset.data.joint_pos[:, asset_cfg.joint_ids]
+    distance_from_default = torch.abs(joint_pos - default_joint_pos)
+
+    # Compute the constraint violation
+    cstr_no_movement = distance_from_default * (distance < limit).float()
+
+        
+    return cstr_no_movement
 
 
 """
@@ -203,3 +231,19 @@ def cstr_foot_stumble(env: ConstrainedManagerBasedRLEnv, sensor_cfg: SceneEntity
     cstr_stumble = f_xy - (f_z * coeff)
 
     return cstr_stumble
+
+def cstr_foot_slip(env: ConstrainedManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"), threshold: float = 1.0) -> torch.Tensor:
+    # Extract used quantities
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    net_contact_forces = contact_sensor.data.net_forces_w_history
+    # Compute the norm of the forces of each foot
+    f_norm = torch.norm(net_contact_forces[:, :, sensor_cfg.body_ids], dim=-1)
+    f_norm_max = torch.max(f_norm, dim=1)[0]
+    # Get the foot velocity
+    asset: Articulation = env.scene[asset_cfg.name]
+    foot_vel = asset.data.body_lin_vel_w[:, asset_cfg.body_ids]
+    foot_vel_xy_norm = torch.norm(foot_vel[:, :, :2], dim=-1)
+    # Compute the constraint
+    cstr_slip = (f_norm_max * foot_vel_xy_norm) - threshold
+
+    return cstr_slip
