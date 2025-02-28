@@ -247,10 +247,10 @@ class RewardsCfg:
     pose_tracking = RewTerm(
         func=mdp.pose_command_error_exp_base_frame_radius,
         weight=2.0,
-        params={"command_name": "ee_pose", "radius": 0.4, "asset_cfg": SceneEntityCfg("robot", body_names=[".*ee_link"])}
+        params={"command_name": "ee_pose", "radius": 0.5, "asset_cfg": SceneEntityCfg("robot", body_names=[".*ee_link"]), "sigmas": "adaptive"}
     )
-    # leg_low_power = RewTerm(func=mdp.low_power, weight=0.25, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"]), "max_power": 900.0})
-    # arm_low_power = RewTerm(func=mdp.low_power, weight=0.25, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 60.0})
+    leg_low_power = RewTerm(func=mdp.low_power, weight=0.1, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"]), "max_power": 900.0})
+    arm_low_power = RewTerm(func=mdp.low_power, weight=0.05, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 60.0})
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
     # -- penalties
     # arm_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-5e-3, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*arm_joints"])})
@@ -329,7 +329,7 @@ class ConstraintsCfg:
     
     # -- Actions
     # cstr_action_limits = CstrTerm(init_max_p=0.2, final_max_p=0.2, func=mdp.cstr_action_limits, params={"asset_cfg": SceneEntityCfg("robot")})
-    cstr_action_rate = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_action_rate, params={"limit": 10.0})
+    cstr_action_rate_legs = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_action_rate, params={"limit": 17.5})
 
     # -- HARD CONSTRAINTS
     cstr_base_knee_contact = CstrTerm(init_max_p=1.0, final_max_p=1.0, func=mdp.cstr_undesired_contacts,
@@ -346,8 +346,11 @@ class ConstraintsCfg:
                                      params={"limit": 0.2, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
     cstr_min_base_height = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_min_base_height,
                                     params={"min_height": 0.15, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
+    # cstr_no_move = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_no_movement, params={"limit": 0.3, "command_name": "ee_pose", "asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
     cstr_foot_stumble = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_foot_stumble,
-                                 params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"])})
+                                 params={"coeff": 2.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"])})
+    cstr_foot_slip = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_foot_slip,
+                              params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"]), "asset_cfg": SceneEntityCfg("robot", body_names=[".*foot"])})
 
 @configclass
 class TerminationsCfg:
