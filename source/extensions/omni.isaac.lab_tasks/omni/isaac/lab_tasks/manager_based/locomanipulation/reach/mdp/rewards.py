@@ -466,11 +466,11 @@ def pose_command_error_exp_base_frame_radius(env: ManagerBasedRLEnv, command_nam
 
     # Obtain gating to encourage base to move closer to desired position
     gating_k = 5.0
-    mu = l = 2.0 * radius
-    gate = 1.0 / (1.0 + torch.exp(-gating_k * (base_dist - mu)/l))
+    mu = radius * 1.5
+    gate = 1.0 / (1.0 + torch.exp(-gating_k * (base_dist - mu)))
     gate = torch.clamp(gate, 0.0, 1.0)
 
-    return gate * pose_rew + (1 - gate) * rew_base_dist
+    return pose_rew + (gate * rew_base_dist)
 
 
 def low_power(env: ManagerBasedRLEnv, max_power: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
