@@ -50,13 +50,21 @@ def cstr_min_base_height(
     # extract the used quantities (to enable type-hinting)
     asset: RigidObject = env.scene[asset_cfg.name]
 
-    return asset.data.root_pos_w[:, 2] - min_height
+    return min_height - asset.data.root_pos_w[:, 2]
+
+def cstr_max_base_velocity(env: ConstrainedManagerBasedRLEnv, max_velocity: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """Penalize the base velocity exceeding the maximum allowed value."""
+    # extract the used quantities (to enable type-hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+    base_velocity = asset.data.root_lin_vel_w
+
+    return torch.norm(base_velocity, dim=1) - max_velocity
 
 """
 Joint constraints.
 """
 
-def cstr_joint_pos_limits(env: ConstrainedManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+def cstr_joint_pos_upper_limits(env: ConstrainedManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Constrain the joint positions to be held within limits
 
     The termination probability of the constraint will increase with how much the position exceeds the limits.
@@ -68,7 +76,23 @@ def cstr_joint_pos_limits(env: ConstrainedManagerBasedRLEnv, asset_cfg: SceneEnt
     joint_limits = asset.data.joint_limits[:, asset_cfg.joint_ids]
     # joint_limits = asset.data.soft_joint_pos_limits[:, asset_cfg.joint_ids]
     upper_lim, lower_lim = joint_limits[:,:,1], joint_limits[:,:,0]
-    cstr_position = torch.max(positions - upper_lim, lower_lim - positions)    
+    cstr_position = positions - upper_lim
+    
+    return cstr_position
+
+def cstr_joint_pos_lower_limits(env: ConstrainedManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """Constrain the joint positions to be held within limits
+
+    The termination probability of the constraint will increase with how much the position exceeds the limits.
+    """
+    # extract the used quantities (to enable type-hinting)
+    asset: Articulation = env.scene[asset_cfg.name]
+    # compute out of limits constraints
+    positions = asset.data.joint_pos[:, asset_cfg.joint_ids]
+    joint_limits = asset.data.joint_limits[:, asset_cfg.joint_ids]
+    # joint_limits = asset.data.soft_joint_pos_limits[:, asset_cfg.joint_ids]
+    upper_lim, lower_lim = joint_limits[:,:,1], joint_limits[:,:,0]
+    cstr_position = lower_lim - positions
     
     return cstr_position
 
@@ -149,7 +173,7 @@ def cstr_joint_deviation(env: ConstrainedManagerBasedRLEnv, limit: float, asset_
         
     return cstr_distance
 
-def cstr_no_movement(env: ConstrainedManagerBasedRLEnv, limit: float, command_name: str, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+def cstr_no_arm_movement(env: ConstrainedManagerBasedRLEnv, limit: float, command_name: str, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """
     Compute a constraint that penalizes movement beyond a specified limit.
     Args:
@@ -166,6 +190,8 @@ def cstr_no_movement(env: ConstrainedManagerBasedRLEnv, limit: float, command_na
     command = env.command_manager.get_command(command_name)
     des_pos_b = command[:, :2] # Desired XY pos of the EE in the base frame
     distance = torch.norm(des_pos_b, dim=1)
+    mu = l = 2.0 * limit
+    gate = torch.sigmoid(5.0 * (distance - mu)/l).clamp(0.0, 1.0)
     
     # Compute distance from default joint positions
     default_joint_pos = asset.data.default_joint_pos[:, asset_cfg.joint_ids]
@@ -173,8 +199,7 @@ def cstr_no_movement(env: ConstrainedManagerBasedRLEnv, limit: float, command_na
     distance_from_default = torch.abs(joint_pos - default_joint_pos)
 
     # Compute the constraint violation
-    cstr_no_movement = distance_from_default * (distance < limit).float()
-
+    cstr_no_movement = gate.unsqueeze(1) * distance_from_default
         
     return cstr_no_movement
 
