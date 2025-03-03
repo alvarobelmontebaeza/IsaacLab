@@ -446,7 +446,7 @@ def pose_command_error_exp_base_frame_radius(env: ManagerBasedRLEnv, command_nam
     )
 
     # Compute the position and orientation errors
-    pos_error = torch.sum(torch.square(curr_pos_b - des_pos_b), dim=1)
+    pos_error = torch.norm(des_pos_b - curr_pos_b, dim=1) #torch.sum(torch.square(curr_pos_b - des_pos_b), dim=1)
     rot_error = quat_error_magnitude(curr_quat_b, des_quat_b)
 
     # Obtain the sigma values for position and orientation
@@ -465,9 +465,9 @@ def pose_command_error_exp_base_frame_radius(env: ManagerBasedRLEnv, command_nam
     rew_base_dist = torch.exp(-base_dist / 0.25)
 
     # Obtain gating to encourage base to move closer to desired position
-    gating_k = 5.0
-    mu = radius * 1.5
-    gate = 1.0 / (1.0 + torch.exp(-gating_k * (base_dist - mu)))
+    gating_k = 10.0
+    mu = l = radius * 2.0
+    gate = torch.sigmoid(gating_k * (base_dist - mu)/l)
     gate = torch.clamp(gate, 0.0, 1.0)
 
     return pose_rew + (gate * rew_base_dist)
@@ -494,6 +494,17 @@ def low_power(env: ManagerBasedRLEnv, max_power: float, asset_cfg: SceneEntityCf
     # Exponential decay reward
     scale = max_power * 0.5
     return torch.exp(-total_power / scale)
+
+def action_rate_regularization(env: ManagerBasedRLEnv, sigma: float = 0.25) -> torch.Tensor:
+    # Get current and previous action
+    curr_action = env.action_manager.action
+    prev_action = env.action_manager.prev_action
+    # Compute the rate of change of the actions
+    action_rate = torch.abs(curr_action - prev_action)
+    # Compute reward with negative exponential kernel to penalize high action rates
+    action_rate_rew = torch.exp(-action_rate / sigma)
+
+    return torch.mean(action_rate_rew, dim=1)
 
 def pose_command_error_ln(env: ManagerBasedRLEnv, command_name: str, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     """
