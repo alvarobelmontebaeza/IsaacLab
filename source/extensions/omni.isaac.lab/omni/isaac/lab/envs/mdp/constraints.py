@@ -148,14 +148,17 @@ def cstr_action_limits(env: ConstrainedManagerBasedRLEnv, asset_cfg: SceneEntity
     asset: Articulation = env.scene[asset_cfg.name]
     # compute out of limits constraints
     joint_limits = asset.data.soft_joint_pos_limits[:, asset_cfg.joint_ids]
-    upper_lim, lower_lim = joint_limits[:,:,1], joint_limits[:,:,0]
-    cstr_action = torch.max(env.action_manager.action[:, :18] - upper_lim, lower_lim - env.action_manager.action[:, :18])
+    upper_lim, lower_lim = joint_limits[:,:-2,1], joint_limits[:,:-2,0] # Remove the gripper joints which are not actuated
+
+    cstr_action = torch.max(env.action_manager.action - upper_lim, lower_lim - env.action_manager.action)   
 
     return cstr_action
 
 def cstr_action_rate(env: ConstrainedManagerBasedRLEnv, limit: float) -> torch.Tensor:
     """Penalize the rate of change of the actions using L2 squared kernel."""
-    return (torch.abs(env.action_manager.action - env.action_manager.prev_action) / env.step_dt) - limit
+    action_diff = torch.abs(env.action_manager.action - env.action_manager.prev_action)
+    action_rate = action_diff / env.step_dt
+    return action_rate - limit
 
 def cstr_joint_deviation(env: ConstrainedManagerBasedRLEnv, limit: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Constrain the joints to be within a certain distance from their default positions.
