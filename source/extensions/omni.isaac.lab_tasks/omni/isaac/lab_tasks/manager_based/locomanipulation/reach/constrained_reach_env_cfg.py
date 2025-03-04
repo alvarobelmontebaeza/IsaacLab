@@ -249,7 +249,7 @@ class RewardsCfg:
         weight=2.5,
         params={"command_name": "ee_pose", "radius": 0.5, "asset_cfg": SceneEntityCfg("robot", body_names=[".*ee_link"]), "sigmas": "adaptive"}
     )
-    leg_low_power = RewTerm(func=mdp.low_power, weight=0.25, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"]), "max_power": 900.0})
+    leg_low_power = RewTerm(func=mdp.low_power, weight=0.35, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"]), "max_power": 900.0})
     arm_low_power = RewTerm(func=mdp.low_power, weight=0.1, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 60.0})
     action_rate = RewTerm(func=mdp.action_rate_regularization, weight=0.2)
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
