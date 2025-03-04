@@ -147,7 +147,7 @@ def cstr_action_limits(env: ConstrainedManagerBasedRLEnv, asset_cfg: SceneEntity
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
     # compute out of limits constraints
-    joint_limits = asset.data.soft_joint_pos_limits[:, asset_cfg.joint_ids]
+    joint_limits = asset.data.joint_limits[:, asset_cfg.joint_ids]
     upper_lim, lower_lim = joint_limits[:,:-2,1], joint_limits[:,:-2,0] # Remove the gripper joints which are not actuated
 
     cstr_action = torch.max(env.action_manager.action - upper_lim, lower_lim - env.action_manager.action)
