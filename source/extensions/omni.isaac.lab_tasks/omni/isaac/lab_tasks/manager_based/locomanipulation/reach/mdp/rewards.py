@@ -446,7 +446,7 @@ def pose_command_error_exp_base_frame_radius(env: ManagerBasedRLEnv, command_nam
     )
 
     # Compute the position and orientation errors
-    pos_error = torch.norm(des_pos_b - curr_pos_b, dim=1) #torch.sum(torch.square(curr_pos_b - des_pos_b), dim=1)
+    pos_error = torch.sum(torch.square(curr_pos_b - des_pos_b), dim=1)
     rot_error = quat_error_magnitude(curr_quat_b, des_quat_b)
 
     # Obtain the sigma values for position and orientation
@@ -461,7 +461,7 @@ def pose_command_error_exp_base_frame_radius(env: ManagerBasedRLEnv, command_nam
     pose_rew = (pos_rew * rot_rew)
 
     # Compute locomotion reward to encourage moving towards the desired position before using manipulation
-    base_dist = torch.norm(des_pos_b[:, :2], dim=1)
+    base_dist = torch.sum(torch.square(des_pos_b[:, :2]), dim=1)
     rew_base_dist = torch.exp(-base_dist / 0.25)
 
     # Obtain gating to encourage base to move closer to desired position
