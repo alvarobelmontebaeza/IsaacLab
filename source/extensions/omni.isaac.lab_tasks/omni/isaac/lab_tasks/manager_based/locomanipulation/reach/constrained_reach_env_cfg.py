@@ -249,7 +249,7 @@ class RewardsCfg:
         weight=2.5,
         params={"command_name": "ee_pose", "radius": 0.5, "asset_cfg": SceneEntityCfg("robot", body_names=[".*ee_link"]), "sigmas": "adaptive"}
     )
-    leg_low_power = RewTerm(func=mdp.low_power, weight=0.35, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"]), "max_power": 900.0})
+    leg_low_power = RewTerm(func=mdp.low_power, weight=0.3, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"]), "max_power": 900.0})
     arm_low_power = RewTerm(func=mdp.low_power, weight=0.1, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 60.0})
     action_rate = RewTerm(func=mdp.action_rate_regularization, weight=0.2)
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
@@ -331,7 +331,8 @@ class ConstraintsCfg:
     })
     
     # -- Actions
-    # cstr_action_limits = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_action_limits, params={"asset_cfg": SceneEntityCfg("robot")})
+    # cstr_leg_action_limits = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_action_limits, params={"action_name": "leg_joint_pos", "asset_cfg": SceneEntityCfg("robot")})
+    # cstr_arm_action_limits = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_action_limits, params={"action_name": "arm_joint_pos", "asset_cfg": SceneEntityCfg("robot")})
     # cstr_action_rate = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_action_rate, params={"limit": 150.0})
 
     # -- HARD CONSTRAINTS
@@ -347,6 +348,8 @@ class ConstraintsCfg:
                                     params={"limit": 0.2, "asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint"])})
     cstr_base_orientation = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_flat_orientation,
                                      params={"limit": 0.2, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
+    cstr_body_orientation_pitch = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_body_orientation_axis,
+                                          params={"axis": "y", "limit": 0.1, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
     cstr_min_base_height = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_min_base_height,
                                     params={"min_height": 0.15, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
     # cstr_no_move = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_no_movement, params={"limit": 0.3, "command_name": "ee_pose", "asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
