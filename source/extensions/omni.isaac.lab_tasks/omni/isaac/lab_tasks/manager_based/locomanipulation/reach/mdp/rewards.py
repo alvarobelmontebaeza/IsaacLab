@@ -466,7 +466,7 @@ def pose_command_error_exp_base_frame_radius(env: ManagerBasedRLEnv, command_nam
 
     # Obtain gating to encourage base to move closer to desired position
     gating_k = 10.0
-    mu = l = radius * 2.0
+    mu = l = radius * 1.5
     gate = torch.sigmoid(gating_k * (base_dist - mu)/l)
     gate = torch.clamp(gate, 0.0, 1.0)
 
