@@ -38,6 +38,21 @@ def cstr_flat_orientation(env: ConstrainedManagerBasedRLEnv, limit: float, asset
 
     return torch.norm(base_orientation, dim=1) - limit
 
+def cstr_body_orientation_axis(env: ConstrainedManagerBasedRLEnv, axis: str, limit: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """Penalize non-flat base orientation using L2 squared kernel.
+
+    This is computed by penalizing the xy-components of the projected gravity vector.
+    """
+    # extract the used quantities (to enable type-hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+    base_orientation = asset.data.projected_gravity_b[:, :2]
+    if axis == "x":
+        return torch.abs(base_orientation[:, 0]) - limit
+    elif axis == "y":
+        return torch.abs(base_orientation[:, 1]) - limit
+    else:
+        raise ValueError(f"Invalid axis: {axis}. Only use 'x' or 'y'.")
+
 
 def cstr_min_base_height(
     env: ConstrainedManagerBasedRLEnv, min_height: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
@@ -139,20 +154,25 @@ def cstr_joint_torque_limits(env: ConstrainedManagerBasedRLEnv, limits: float, a
 Action penalties.
 """
 
-def cstr_action_limits(env: ConstrainedManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+def cstr_action_limits(env: ConstrainedManagerBasedRLEnv, action_name: str, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Constrain the actions to be held within limits
 
     The termination probability of the constraint will increase with how much the action exceeds the limits.
     """
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
-    # compute out of limits constraints
-    joint_limits = asset.data.joint_limits[:, asset_cfg.joint_ids]
-    upper_lim, lower_lim = joint_limits[:,:-2,1], joint_limits[:,:-2,0] # Remove the gripper joints which are not actuated
+    # Retrieve raw actions applied to the joints
+    action_term = env.action_manager.get_term(action_name)
+    processed_actions = action_term.processed_actions # Apply constraint to the processed actions, not the raw ones
+    action_joint_ids = action_term._joint_ids # type: ignore
+    # Retrieve joint limits
+    joint_limits = asset.data.joint_limits[:, action_joint_ids]
+    upper_lim, lower_lim = joint_limits[:,:,1], joint_limits[:,:,0] # Remove the gripper joints which are not actuated
+    # Compute the constraint violation
+    cstr_action_lim = torch.max(processed_actions - upper_lim, lower_lim - processed_actions)
 
-    cstr_action = torch.max(env.action_manager.action - upper_lim, lower_lim - env.action_manager.action)
 
-    return cstr_action
+
 
 def cstr_action_rate(env: ConstrainedManagerBasedRLEnv, limit: float) -> torch.Tensor:
     """Penalize the rate of change of the actions using L2 squared kernel."""
