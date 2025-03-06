@@ -171,8 +171,7 @@ def cstr_action_limits(env: ConstrainedManagerBasedRLEnv, action_name: str, asse
     # Compute the constraint violation
     cstr_action_lim = torch.max(processed_actions - upper_lim, lower_lim - processed_actions)
 
-
-
+    return cstr_action_lim
 
 def cstr_action_rate(env: ConstrainedManagerBasedRLEnv, limit: float) -> torch.Tensor:
     """Penalize the rate of change of the actions using L2 squared kernel."""
