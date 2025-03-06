@@ -331,8 +331,8 @@ class ConstraintsCfg:
     })
     
     # -- Actions
-    # cstr_leg_action_limits = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_action_limits, params={"action_name": "leg_joint_pos", "asset_cfg": SceneEntityCfg("robot")})
-    # cstr_arm_action_limits = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_action_limits, params={"action_name": "arm_joint_pos", "asset_cfg": SceneEntityCfg("robot")})
+    cstr_leg_action_limits = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_action_limits, params={"action_name": "leg_joint_pos", "asset_cfg": SceneEntityCfg("robot")})
+    cstr_arm_action_limits = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_action_limits, params={"action_name": "arm_joint_pos", "asset_cfg": SceneEntityCfg("robot")})
     # cstr_action_rate = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_action_rate, params={"limit": 150.0})
 
     # -- HARD CONSTRAINTS
