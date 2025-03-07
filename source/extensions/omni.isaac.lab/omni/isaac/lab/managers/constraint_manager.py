@@ -183,7 +183,7 @@ class ConstraintManager(ManagerBase):
             max_p = self.get_term_cfg(name).init_max_p
 
         # Get the maximum constraint violation for the current step
-        constraint_max = constraint.max(dim=1, keepdim=True)[0].clamp(min=1e-6)
+        constraint_max = constraint.max(dim=0, keepdim=True)[0].clamp(min=1e-6)
 
         # Compute polyak average of the maximum constraint violation for this constraint
         if name not in self.running_maxes:
