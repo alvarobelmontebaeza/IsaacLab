@@ -250,8 +250,8 @@ class RewardsCfg:
         params={"command_name": "ee_pose", "radius": 0.4, "asset_cfg": SceneEntityCfg("robot", body_names=[".*ee_link"]), "sigmas": "adaptive"}
     )
     leg_low_power = RewTerm(func=mdp.low_power, weight=0.45, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"]), "max_power": 900.0})
-    arm_low_power = RewTerm(func=mdp.low_power, weight=0.1, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 60.0})
-    action_rate = RewTerm(func=mdp.action_rate_regularization, weight=0.2)
+    arm_low_power = RewTerm(func=mdp.low_power, weight=0.15, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 60.0})
+    action_rate = RewTerm(func=mdp.action_rate_regularization, weight=0.15)
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
     # -- penalties
     # arm_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-5e-3, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*arm_joints"])})
@@ -341,7 +341,7 @@ class ConstraintsCfg:
     cstr_arm_contact = CstrTerm(init_max_p=1.0, final_max_p=1.0, func=mdp.cstr_undesired_contacts,
                                 params={"threshold": 1.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*arm_links"])})
     cstr_foot_contact_force = CstrTerm(init_max_p=1.0, final_max_p=1.0, func=mdp.cstr_foot_contact_force,
-                                       params={"limit": 900.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"])})
+                                       params={"limit": 1000.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"])})
     cstr_min_base_height = CstrTerm(init_max_p=1.0, final_max_p=1.0, func=mdp.cstr_min_base_height,
                                     params={"min_height": 0.15, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
     # -- STYLE CONSTRAINTS
