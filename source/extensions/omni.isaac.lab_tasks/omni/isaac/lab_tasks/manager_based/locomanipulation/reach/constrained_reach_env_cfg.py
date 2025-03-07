@@ -130,8 +130,8 @@ class ObservationsCfg:
 
         # observation terms (order preserved)
         #base_pos_w = ObsTerm(func=mdp.root_pos_w, noise=Unoise(n_min=-0.05, n_max=0.05))
-        base_rotation = ObsTerm(func=mdp.root_quat_w, noise=Unoise(n_min=-0.1, n_max=0.1))
-        # base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
+        base_rotation = ObsTerm(func=mdp.projected_gravity, noise=Unoise(n_min=-0.1, n_max=0.1))
+        base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
         joint_pos = ObsTerm(func=mdp.joint_pos, noise=Unoise(n_min=-0.01, n_max=0.01))
         joint_vel = ObsTerm(func=mdp.joint_vel, noise=Unoise(n_min=-1.5, n_max=1.5))
@@ -249,9 +249,9 @@ class RewardsCfg:
         weight=2.5,
         params={"command_name": "ee_pose", "radius": 0.4, "asset_cfg": SceneEntityCfg("robot", body_names=[".*ee_link"]), "sigmas": "adaptive"}
     )
-    leg_low_power = RewTerm(func=mdp.low_power, weight=0.45, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"]), "max_power": 900.0})
+    leg_low_power = RewTerm(func=mdp.low_power, weight=0.4, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"]), "max_power": 900.0})
     arm_low_power = RewTerm(func=mdp.low_power, weight=0.15, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 60.0})
-    action_rate = RewTerm(func=mdp.action_rate_regularization, weight=0.15)
+    action_rate = RewTerm(func=mdp.action_rate_regularization, weight=0.2)
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
     # -- penalties
     # arm_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-5e-3, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*arm_joints"])})
@@ -354,8 +354,10 @@ class ConstraintsCfg:
     # cstr_no_move = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_no_movement, params={"limit": 0.3, "command_name": "ee_pose", "asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
     cstr_foot_stumble = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_foot_stumble,
                                  params={"coeff": 2.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"])})
+    '''
     cstr_foot_slip = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_foot_slip,
                               params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"]), "asset_cfg": SceneEntityCfg("robot", body_names=[".*foot"])})
+    '''
 @configclass
 class TerminationsCfg:
     """Termination terms for the MDP."""
