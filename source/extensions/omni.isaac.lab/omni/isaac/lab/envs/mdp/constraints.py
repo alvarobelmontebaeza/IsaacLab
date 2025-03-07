@@ -67,13 +67,13 @@ def cstr_min_base_height(
 
     return min_height - asset.data.root_pos_w[:, 2]
 
-def cstr_max_base_velocity(env: ConstrainedManagerBasedRLEnv, max_velocity: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+def cstr_max_base_velocity(env: ConstrainedManagerBasedRLEnv, limit: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Penalize the base velocity exceeding the maximum allowed value."""
     # extract the used quantities (to enable type-hinting)
     asset: RigidObject = env.scene[asset_cfg.name]
     base_velocity = asset.data.root_lin_vel_w
 
-    return torch.norm(base_velocity, dim=1) - max_velocity
+    return torch.norm(base_velocity, dim=1) - limit
 
 """
 Joint constraints.
