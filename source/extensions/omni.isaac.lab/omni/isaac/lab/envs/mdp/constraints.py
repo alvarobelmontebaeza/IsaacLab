@@ -52,6 +52,24 @@ def cstr_body_orientation_axis(env: ConstrainedManagerBasedRLEnv, axis: str, lim
         return torch.abs(base_orientation[:, 1]) - limit
     else:
         raise ValueError(f"Invalid axis: {axis}. Only use 'x' or 'y'.")
+    
+def cstr_upsidedown(env: ConstrainedManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """
+    Checks if the specified asset in the environment is upside down.
+
+    Args:
+        env (ConstrainedManagerBasedRLEnv): The environment containing the asset.
+        asset_cfg (SceneEntityCfg, optional): Configuration for the asset to check. Defaults to SceneEntityCfg("robot").
+
+    Returns:
+        torch.Tensor: A tensor indicating whether the asset is upside down (True if upside down, False otherwise).
+    """
+    asset: RigidObject = env.scene[asset_cfg.name]
+    base_orientation_z = asset.data.projected_gravity_b[:, 2]
+
+    return base_orientation_z > 0.0
+
+
 
 
 def cstr_min_base_height(
