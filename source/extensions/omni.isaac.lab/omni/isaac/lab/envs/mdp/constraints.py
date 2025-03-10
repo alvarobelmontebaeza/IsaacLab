@@ -312,3 +312,19 @@ def cstr_foot_slip(env: ConstrainedManagerBasedRLEnv, sensor_cfg: SceneEntityCfg
     cstr_slip = (f_norm_max * foot_vel_xy_norm) - threshold
 
     return cstr_slip
+
+def cstr_feet_force_std(env: ConstrainedManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"), limit: float = 50.0) -> torch.Tensor:    
+    # Extract used quantities
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    net_contact_forces = contact_sensor.data.net_forces_w
+    # Compute the norm of the forces of each foot
+    f_norm = torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1)
+    print("F_NORM", f_norm)
+
+    # Compute the standard deviation of the forces
+    f_std = torch.std(f_norm, dim=1)
+    print("F_STD", f_std)
+    # Compute the constraint
+    cstr_std = f_std - limit
+
+    return cstr_std
