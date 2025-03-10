@@ -359,7 +359,7 @@ class ConstraintsCfg:
     # cstr_no_move = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_no_movement, params={"limit": 0.3, "command_name": "ee_pose", "asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
     cstr_foot_stumble = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_foot_stumble,
                                  params={"coeff": 2.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"])})
-    cstr_feet_force_std = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_feet_force_std,
+    cstr_feet_force_std = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_feet_force_std,
                                       params={"limit": 25.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"])})
     '''
     cstr_foot_slip = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_foot_slip,
