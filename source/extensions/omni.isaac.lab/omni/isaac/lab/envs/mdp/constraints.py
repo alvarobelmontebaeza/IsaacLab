@@ -319,11 +319,9 @@ def cstr_feet_force_std(env: ConstrainedManagerBasedRLEnv, sensor_cfg: SceneEnti
     net_contact_forces = contact_sensor.data.net_forces_w
     # Compute the norm of the forces of each foot
     f_norm = torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1)
-    print("F_NORM", f_norm)
 
     # Compute the standard deviation of the forces
     f_std = torch.std(f_norm, dim=1)
-    print("F_STD", f_std)
     # Compute the constraint
     cstr_std = f_std - limit
 
