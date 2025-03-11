@@ -340,8 +340,8 @@ class ConstraintsCfg:
                                       params={"threshold": 1.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*base", ".*Head.*", ".*hip", ".*thigh", ".*calf"])})
     cstr_arm_contact = CstrTerm(init_max_p=1.0, final_max_p=1.0, func=mdp.cstr_undesired_contacts,
                                 params={"threshold": 1.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*arm_links"])})
-    cstr_foot_contact_force = CstrTerm(init_max_p=1.0, final_max_p=1.0, func=mdp.cstr_foot_contact_force,
-                                       params={"limit": 800.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"])})
+    cstr_foot_contact_force = CstrTerm(init_max_p=0.5, final_max_p=1.0, func=mdp.cstr_foot_contact_force,
+                                       params={"limit": 250.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"])})
     cstr_min_base_height = CstrTerm(init_max_p=1.0, final_max_p=1.0, func=mdp.cstr_min_base_height,
                                     params={"min_height": 0.15, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
     cstr_upside_down = CstrTerm(init_max_p=1.0, final_max_p=1.0, func=mdp.cstr_upsidedown,
