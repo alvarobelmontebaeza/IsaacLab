@@ -250,7 +250,7 @@ class RewardsCfg:
         params={"command_name": "ee_pose", "radius": 0.4, "asset_cfg": SceneEntityCfg("robot", body_names=[".*ee_link"]), "sigmas": "adaptive"}
     )
     leg_low_power = RewTerm(func=mdp.low_power, weight=0.4, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"]), "max_power": 900.0})
-    arm_low_power = RewTerm(func=mdp.low_power, weight=0.15, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 60.0})
+    arm_low_power = RewTerm(func=mdp.low_power, weight=0.2, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 60.0})
     action_rate = RewTerm(func=mdp.action_rate_regularization, weight=0.2)
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
     # -- penalties
@@ -351,7 +351,7 @@ class ConstraintsCfg:
     cstr_body_velocity = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_max_base_velocity,
                                  params={"limit": 0.25, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
     cstr_joint_deviation = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_joint_deviation,
-                                    params={"limit": 0.2, "asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint"])})
+                                    params={"limit": 0.4, "asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint"])})
     cstr_base_orientation = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_flat_orientation,
                                      params={"limit": 0.3, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
     cstr_body_orientation_pitch = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_body_orientation_axis,
