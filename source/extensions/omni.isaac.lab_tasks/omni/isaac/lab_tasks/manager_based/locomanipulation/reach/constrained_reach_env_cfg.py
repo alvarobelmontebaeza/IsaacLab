@@ -355,7 +355,7 @@ class ConstraintsCfg:
     cstr_base_orientation = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_flat_orientation,
                                      params={"limit": 0.3, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
     cstr_body_orientation_pitch = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_body_orientation_axis,
-                                          params={"axis": "y", "limit": 0.1, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
+                                          params={"axis": "y", "limit": 0.3, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
     # cstr_no_move = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_no_movement, params={"limit": 0.3, "command_name": "ee_pose", "asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])})
     cstr_foot_stumble = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_foot_stumble,
                                  params={"coeff": 2.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"])})
