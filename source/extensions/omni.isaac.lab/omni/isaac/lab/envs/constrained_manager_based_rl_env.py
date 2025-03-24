@@ -205,7 +205,7 @@ class ConstrainedManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         self.reward_buf *= (1.0 - self.constraint_probs)
 
         # Update resets based on constraint probabilities
-        self.reset_buf = self.constraint_probs
+        self.reset_buf = self.constraint_probs.clone()
         self.extras["reset_buf"] = self.reset_buf
         self.reset_terminated |= (self.reset_buf >= 1.0)
         self.reset_env_buf = self.reset_time_outs | self.reset_terminated
@@ -306,6 +306,7 @@ class ConstrainedManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
             # destructor is order-sensitive
             del self.command_manager
             del self.reward_manager
+            del self.constraint_manager
             del self.termination_manager
             del self.curriculum_manager
             # call the parent class to close the environment
