@@ -59,8 +59,10 @@ class ConstraintManager(ManagerBase):
 
         # prepare extra info to store individual constraint term information
         self._episode_sums = dict()
+        self._cstr_mean_values = dict()
         for term_name in self._term_names:
             self._episode_sums[term_name] = torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
+            self._cstr_mean_values[term_name] = torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
         # create buffer for managing constraint per environment
         self._constraint_buf = torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
 
@@ -120,11 +122,22 @@ class ConstraintManager(ManagerBase):
         extras = {}
         for key in self._episode_sums.keys():
             # store information
-            # r_1 + r_2 + ... + r_n
-            episodic_sum_avg = torch.mean(self._episode_sums[key][env_ids])
-            extras["Episode_constraint/" + key] = episodic_sum_avg / self._env.max_episode_length_s
+            extras["Episode_Constraint_violation/" + key] = (
+                torch.mean(
+                    self._episode_sums[key][env_ids]
+                    / self._env.episode_length_buf[env_ids],
+                    dim=0,
+                )
+                * 100
+            )
+            extras["Episode_Constraint_probability/" + key] = torch.mean(
+                self._cstr_mean_values[key][env_ids]
+                / self._env.episode_length_buf[env_ids],
+                dim=0,
+            )
             # reset episodic sum
             self._episode_sums[key][env_ids] = 0.0
+            self._cstr_mean_values[key][env_ids] = 0.0
         # reset all the constraint terms
         for term_cfg in self._class_term_cfgs:
             term_cfg.func.reset(env_ids=env_ids)
@@ -154,10 +167,16 @@ class ConstraintManager(ManagerBase):
             # obtain the termination probability for the constraint
             self.add(name, sqrt_func(constraint), term_cfg.max_p)
         
+        cstr_probs = self.get_probs()
+        
         # Log the termination probabilities for each constraint
-        self.log_all()
+        for name in self._term_names:
+            self._episode_sums[name] += (
+                self.probs[name].max(1).values.gt(0.0).float()
+            )
+            self._cstr_mean_values[name] += self.probs[name].max(1).values
 
-        return self.get_probs()
+        return cstr_probs
     
     def add(self, name, constraint, max_p=0.1):
         """Add a constraint violation to the constraint manager and compute the
