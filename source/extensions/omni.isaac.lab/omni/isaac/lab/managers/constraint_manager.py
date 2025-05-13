@@ -112,8 +112,8 @@ class ConstraintManager(ManagerBase):
             Dictionary of episodic sum of individual constraint terms.
         """
         # Reset the termination probabilities of the constraint manager
-        self.probs.clear()
-        self.raw_constraints.clear()
+        #self.probs.clear()
+        #self.raw_constraints.clear()
         
         # resolve environment ids
         if env_ids is None:
