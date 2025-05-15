@@ -57,8 +57,8 @@ WX250s_CFG = ArticulationCfg(
                 ".*widow_wrist_rotate": 1.5,
             },
             velocity_limit=3.14,
-            stiffness=1000.0,
-            damping=20.0,
+            stiffness=800.0,
+            damping=80.0,
         ),
     },
 )
