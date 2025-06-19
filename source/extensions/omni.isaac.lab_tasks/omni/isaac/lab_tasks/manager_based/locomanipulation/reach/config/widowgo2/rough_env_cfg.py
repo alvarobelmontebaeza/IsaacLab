@@ -44,7 +44,7 @@ class WidowGo2ReachRoughEnvCfg(LocomanipulationReachRoughEnvCfg):
         # event
         self.events.add_base_mass.params["mass_distribution_params"] = (-1.0, 1.0)
         self.events.add_base_mass.params["asset_cfg"].body_names = "base"
-        self.events.add_arm_payload.params["mass_distribution_params"] = (0.0, 0.1)
+        self.events.add_arm_payload.params["mass_distribution_params"] = (0.0, 0.0)
         self.events.add_arm_payload.params["asset_cfg"].body_names = ".*wx250s_ee_gripper_link"
         
         self.events.base_external_force_torque.params["asset_cfg"].body_names = "base"
@@ -128,8 +128,7 @@ class CstrWidowGo2ReachRoughEnvCfg(CstrLocomanipulationReachRoughEnvCfg):
         # event
         self.events.add_base_mass.params["mass_distribution_params"] = (-1.0, 1.0)
         self.events.add_base_mass.params["asset_cfg"].body_names = "base"
-        self.events.add_arm_payload.params["mass_distribution_params"] = (0.0, 0.1)
-        self.events.add_arm_payload.params["asset_cfg"].body_names = ".*wx250s_ee_gripper_link"
+        self.events.add_arm_payload = None
         
         self.events.base_external_force_torque.params["asset_cfg"].body_names = "base"
         self.events.reset_robot_joints.params["position_range"] = (1.0, 1.0)
