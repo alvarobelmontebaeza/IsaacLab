@@ -133,8 +133,26 @@ class ObservationsCfg:
         base_rotation = ObsTerm(func=mdp.projected_gravity, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
-        joint_pos = ObsTerm(func=mdp.joint_pos, noise=Unoise(n_min=-0.01, n_max=0.01))
-        joint_vel = ObsTerm(func=mdp.joint_vel, noise=Unoise(n_min=-1.5, n_max=1.5))
+        leg_joint_pos = ObsTerm(
+            func=mdp.joint_pos,
+            params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])},
+            noise=Unoise(n_min=-0.01, n_max=0.01)
+            )
+        arm_joint_pos = ObsTerm(
+            func=mdp.joint_pos,
+            params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"])},
+            noise=Unoise(n_min=-0.01, n_max=0.01),
+        )
+        leg_joint_vel = ObsTerm(
+            func=mdp.joint_vel,
+            params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"])},
+            noise=Unoise(n_min=-1.5, n_max=1.5),
+        )
+        arm_joint_vel = ObsTerm(
+            func=mdp.joint_vel,
+            params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"])},
+            noise=Unoise(n_min=-1.5, n_max=1.5),
+        )
         feet_contacts = ObsTerm(func=mdp.feet_contacts, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
         actions = ObsTerm(func=mdp.last_action)
         '''
@@ -246,12 +264,12 @@ class RewardsCfg:
     # -- task
     pose_tracking = RewTerm(
         func=mdp.pose_command_error_exp_base_frame_radius,
-        weight=2.5,
-        params={"command_name": "ee_pose", "radius": 0.35, "asset_cfg": SceneEntityCfg("robot", body_names=[".*ee_link"]), "sigmas": "adaptive"}
+        weight= 2.5,
+        params={"command_name": "ee_pose", "radius": 0.3, "asset_cfg": SceneEntityCfg("robot", body_names=[".*ee_link"]), "sigmas": "adaptive"}
     )
     leg_low_power = RewTerm(func=mdp.low_power, weight=0.7, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"]), "max_power": 900.0})
-    arm_low_power = RewTerm(func=mdp.low_power, weight=0.3, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 60.0})
-    action_rate = RewTerm(func=mdp.action_rate_regularization, weight=0.2)
+    arm_low_power = RewTerm(func=mdp.low_power, weight=0.45, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 24.0})
+    action_rate = RewTerm(func=mdp.action_rate_regularization, weight=0.2, params={"sigma": 0.25})
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
     # -- penalties
     # arm_dof_power = RewTerm(func=mdp.joint_power_l2, weight=-5e-3, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*arm_joints"])})
@@ -302,32 +320,32 @@ class ConstraintsCfg:
         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"])})
     cstr_arm_joint_pos_lower_limits = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_joint_pos_lower_limits, params={
         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"])})
-    cstr_arm_joint_vel_limits = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_joint_vel_limits, params={
-        "asset_cfg": SceneEntityCfg("robot", joint_names=[".*widow_waist", ".*widow_shoulder", ".*widow_elbow", ".*widow_forearm_roll", ".*widow_wrist_angle", ".*widow_wrist_rotate"]), 
-        "limits": 3.14})
+    # cstr_arm_joint_vel_limits = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_joint_vel_limits, params={
+    #     "asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), 
+    #     "limits": 3.1415})
     cstr_arm_joint_torque_limits_waist = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_joint_torque_limits, params={
         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*widow_waist"]), 
-        "limits": 10.0,
+        "limits": 4.0,
     })
     cstr_arm_joint_torque_limits_shoulder = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_joint_torque_limits, params={
         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*widow_shoulder"]), 
-        "limits": 20.0,
+        "limits": 8.0,
     })
     cstr_arm_joint_torque_limits_elbow = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_joint_torque_limits, params={
         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*widow_elbow"]), 
-        "limits": 15.0,
+        "limits": 8.0,
     })
     cstr_arm_joint_torque_limits_forearm_roll = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_joint_torque_limits, params={
         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*widow_forearm_roll"]), 
-        "limits": 2.0,
+        "limits": 4.0,
     })
     cstr_arm_joint_torque_limits_wrist_angle = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_joint_torque_limits, params={
         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*widow_wrist_angle"]), 
-        "limits": 5.0,
+        "limits": 4.0,
     })
     cstr_arm_joint_torque_limits_wrist_rotate = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_joint_torque_limits, params={
         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*widow_wrist_rotate"]), 
-        "limits": 1.0,
+        "limits": 1.4,
     })
     
     # -- Actions
@@ -413,7 +431,7 @@ class CstrLocomanipulationReachRoughEnvCfg(ConstrainedManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 4
+        self.decimation = 2
         self.episode_length_s = 8.0
         # simulation settings
         self.sim.dt = 0.005
