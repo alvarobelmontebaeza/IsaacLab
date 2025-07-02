@@ -30,18 +30,18 @@ class WX250sReachEnvCfg(ReachEnvCfg):
         # switch robot to WX250s
         self.scene.robot = WX250s_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         # override rewards
-        self.rewards.end_effector_position_tracking.params["asset_cfg"].body_names = ["ee_gripper_link"]
+        self.rewards.end_effector_position_tracking.params["asset_cfg"].body_names = ["fingers_link"]
         self.rewards.end_effector_position_tracking.weight = -0.
-        self.rewards.end_effector_position_tracking_fine_grained.params["asset_cfg"].body_names = ["ee_gripper_link"]
+        self.rewards.end_effector_position_tracking_fine_grained.params["asset_cfg"].body_names = ["fingers_link"]
         self.rewards.end_effector_position_tracking_fine_grained.weight = 0.
-        self.rewards.end_effector_orientation_tracking.params["asset_cfg"].body_names = ["ee_gripper_link"]
+        self.rewards.end_effector_orientation_tracking.params["asset_cfg"].body_names = ["fingers_link"]
         self.rewards.end_effector_orientation_tracking.weight = -0.
 
-        self.rewards.pose_command_tracking.params["asset_cfg"].body_names = ["ee_gripper_link"]
+        self.rewards.pose_command_tracking.params["asset_cfg"].body_names = ["fingers_link"]
         self.rewards.pose_command_tracking.weight = 5.0
         
         self.rewards.joint_vel.weight = 0.0
-        self.rewards.joint_power.weight = -0.05
+        self.rewards.joint_power.weight = -0.005
         self.rewards.action_rate.weight = -0.1
 
         self.curriculum.action_rate = None
@@ -57,18 +57,18 @@ class WX250sReachEnvCfg(ReachEnvCfg):
         # override observations
         self.observations.policy.joint_pos.params["asset_cfg"].joint_names = [".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]
         self.observations.policy.joint_vel.params["asset_cfg"].joint_names = [".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]
-
         # override command generator body
         # end-effector is along z-direction
-        self.commands.ee_pose.body_name = "ee_gripper_link"
+        self.commands.ee_pose.body_name = "fingers_link"
         self.commands.ee_pose.ranges.pitch = (-math.pi / 4, math.pi / 4)
         self.commands.ee_pose.ranges.yaw = (-math.pi / 4, math.pi / 4)
         self.commands.ee_pose.ranges.pos_x = (0.1, 0.3)
         self.commands.ee_pose.ranges.pos_y = (-0.2, 0.2)
         self.commands.ee_pose.ranges.pos_z = (0.1, 0.4)
 
-        self.sim.dt = 0.005
-        self.decimation = 4
+        # Simulation and policy frequency
+        self.sim.dt = 0.005 #200Hz physics dt
+        self.decimation = 2 # 50Hz policy dt
         self.sim.render_interval = self.decimation
 
 
