@@ -253,7 +253,7 @@ WIDOWGO2_CFG = ArticulationCfg(
             min_delay=2,
             max_delay=4,
         ),
-        "arm": ImplicitActuatorCfg(
+        "arm": DelayedPDActuatorCfg(
             joint_names_expr=[".*widow_waist", ".*widow_shoulder", ".*widow_elbow", ".*widow_forearm_roll", ".*widow_wrist_angle", ".*widow_wrist_rotate"],
             effort_limit={
                 ".*widow_waist": 4.0,
@@ -264,8 +264,11 @@ WIDOWGO2_CFG = ArticulationCfg(
                 ".*widow_wrist_rotate": 1.4,
             },
             velocity_limit= 3.14,
-            stiffness=800.0,
-            damping=80.0,
+            stiffness=750.0,
+            damping=100.0,
+            friction=0.0,
+            min_delay=2,
+            max_delay=4,
         ),
     },
 )
