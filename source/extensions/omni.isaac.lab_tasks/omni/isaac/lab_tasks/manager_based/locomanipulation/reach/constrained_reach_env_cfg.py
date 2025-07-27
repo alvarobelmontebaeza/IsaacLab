@@ -97,9 +97,9 @@ class CommandsCfg:
     ee_pose = mdp.UniformPoseWorldCommandCfg(
         asset_name="robot",
         body_name=MISSING, # Virtual EE frame at the end of the robot arm
-        resampling_time_range=(4.0, 4.0),
+        resampling_time_range=(6.0, 8.0),
         ranges=mdp.UniformPoseWorldCommandCfg.Ranges(
-            pos_x=(0.2, 1.2),
+            pos_x=(-1.0, 1.0),
             pos_y=(-0.5, 0.5),
             pos_z=(-0.3, 0.3),
             roll=(0.0, 0.0),
@@ -268,7 +268,7 @@ class RewardsCfg:
         params={"command_name": "ee_pose", "radius": 0.3, "asset_cfg": SceneEntityCfg("robot", body_names=[".*ee_link"]), "sigmas": "adaptive"}
     )
     leg_low_power = RewTerm(func=mdp.low_power, weight=0.7, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"]), "max_power": 900.0})
-    arm_low_power = RewTerm(func=mdp.low_power, weight=0.45, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 24.0})
+    arm_low_power = RewTerm(func=mdp.low_power, weight=0.5, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 24.0})
     action_rate = RewTerm(func=mdp.action_rate_regularization, weight=0.2, params={"sigma": 0.25})
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
     # -- penalties
@@ -431,7 +431,7 @@ class CstrLocomanipulationReachRoughEnvCfg(ConstrainedManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 2
+        self.decimation = 4
         self.episode_length_s = 8.0
         # simulation settings
         self.sim.dt = 0.005
