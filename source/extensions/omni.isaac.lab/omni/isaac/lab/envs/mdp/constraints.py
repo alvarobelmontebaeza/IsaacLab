@@ -85,6 +85,19 @@ def cstr_min_base_height(
 
     return min_height - asset.data.root_pos_w[:, 2]
 
+def cstr_max_base_height(
+    env: ConstrainedManagerBasedRLEnv, max_height: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+) -> torch.Tensor:
+    """Penalize asset height from its target using L2 squared kernel.
+
+    Note:
+        Currently, it assumes a flat terrain, i.e. the target height is in the world frame.
+    """
+    # extract the used quantities (to enable type-hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+
+    return asset.data.root_pos_w[:, 2] - max_height
+
 def cstr_max_base_velocity(env: ConstrainedManagerBasedRLEnv, limit: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Penalize the base velocity exceeding the maximum allowed value."""
     # extract the used quantities (to enable type-hinting)

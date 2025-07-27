@@ -64,6 +64,14 @@ class MySceneCfg(InteractiveSceneCfg):
         ),
         debug_vis=False,
     )
+    # Tune terrain to have only random rough terrain, not stairs or boxes
+    terrain.terrain_generator.sub_terrains["random_rough"].proportion = 1.0
+    terrain.terrain_generator.sub_terrains["pyramid_stairs"].proportion = 0.0
+    terrain.terrain_generator.sub_terrains["pyramid_stairs_inv"].proportion = 0.0
+    terrain.terrain_generator.sub_terrains["boxes"].proportion = 0.0
+    terrain.terrain_generator.sub_terrains["hf_pyramid_slope"].proportion = 0.0
+    terrain.terrain_generator.sub_terrains["hf_pyramid_slope_inv"].proportion = 0.0
+
     # robots
     robot: ArticulationCfg = MISSING
     # sensors
@@ -89,7 +97,6 @@ class MySceneCfg(InteractiveSceneCfg):
 ##
 # MDP settings
 ##
-
 
 @configclass
 class CommandsCfg:
@@ -127,7 +134,6 @@ class ObservationsCfg:
     @configclass
     class PolicyCfg(ObsGroup):
         """Observations for policy group."""
-
         # observation terms (order preserved)
         #base_pos_w = ObsTerm(func=mdp.root_pos_w, noise=Unoise(n_min=-0.05, n_max=0.05))
         base_rotation = ObsTerm(func=mdp.projected_gravity, noise=Unoise(n_min=-0.1, n_max=0.1))
@@ -155,14 +161,12 @@ class ObservationsCfg:
         )
         feet_contacts = ObsTerm(func=mdp.feet_contacts, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")})
         actions = ObsTerm(func=mdp.last_action)
-        '''
         height_scan = ObsTerm(
             func=mdp.height_scan,
             params={"sensor_cfg": SceneEntityCfg("height_scanner")},
             noise=Unoise(n_min=-0.1, n_max=0.1),
             clip=(-1.0, 1.0),
         )
-        '''
         target_pose = ObsTerm(func=mdp.generated_commands, params={"command_name": "ee_pose"})
         # target_pose = ObsTerm(func=mdp.pose_command_cartesian_6d_rotation, params={"command_name": "ee_pose"})
         # current_pose = ObsTerm(func=mdp.body_pose_cartesian_quaternion_base_frame, params={"asset_cfg": SceneEntityCfg("robot", body_names=".*link_grasping_frame")})
@@ -267,8 +271,8 @@ class RewardsCfg:
         weight= 2.5,
         params={"command_name": "ee_pose", "radius": 0.3, "asset_cfg": SceneEntityCfg("robot", body_names=[".*ee_link"]), "sigmas": "adaptive"}
     )
-    leg_low_power = RewTerm(func=mdp.low_power, weight=0.7, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"]), "max_power": 900.0})
-    arm_low_power = RewTerm(func=mdp.low_power, weight=0.5, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 24.0})
+    leg_low_power = RewTerm(func=mdp.low_power, weight=0.1, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"]), "max_power": 900.0})
+    arm_low_power = RewTerm(func=mdp.low_power, weight=0.05, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 24.0})
     action_rate = RewTerm(func=mdp.action_rate_regularization, weight=0.2, params={"sigma": 0.25})
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
     # -- penalties
@@ -362,6 +366,8 @@ class ConstraintsCfg:
                                        params={"limit": 225.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"])})
     cstr_min_base_height = CstrTerm(init_max_p=1.0, final_max_p=1.0, func=mdp.cstr_min_base_height,
                                     params={"min_height": 0.15, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
+    cstr_max_base_height = CstrTerm(init_max_p=1.0, final_max_p=1.0, func=mdp.cstr_max_base_height,
+                                    params={"max_height": 1.0, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
     cstr_upside_down = CstrTerm(init_max_p=1.0, final_max_p=1.0, func=mdp.cstr_upsidedown,
                                 params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
     
@@ -388,12 +394,10 @@ class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
-    '''
     base_contact = DoneTerm(
         func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*base", ".*hip", ".*thigh"]), "threshold": 1.0},
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*base"]), "threshold": 1.0},
     )
-    '''
     # bad_orientation = DoneTerm(func=mdp.bad_orientation, params={"limit_angle": 0.5, "asset_cfg": SceneEntityCfg("robot", body_names=["base"])})
 
 
@@ -401,7 +405,7 @@ class TerminationsCfg:
 class CurriculumCfg:
     """Curriculum terms for the MDP."""
 
-    terrain_levels = CurrTerm(func=mdp.terrain_levels_vel)
+    terrain_levels = CurrTerm(func=mdp.terrain_levels_pos, params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*wx250s_ee_gripper_link"]), "threshold": 0.1})  # must be in (0,1)
     constraint_max_probs = CurrTerm(func=mdp.modify_constraint_max_prob, params={"max_p_epoch_factor": 0.6}) # must be in (0,1)
     #TODO: Add curriculum for the arm pose targets
 
@@ -436,6 +440,7 @@ class CstrLocomanipulationReachRoughEnvCfg(ConstrainedManagerBasedRLEnvCfg):
         # simulation settings
         self.sim.dt = 0.005
         self.sim.render_interval = self.decimation
+        self.sim.gravity = tuple([0.0, 0.0, self.sim.gravity[2] / 6.0])  # reduce gravity to 1/6th of the default value (moon gravity)
         self.sim.disable_contact_processing = True
         self.sim.physics_material = self.scene.terrain.physics_material
         # update sensor update periods
