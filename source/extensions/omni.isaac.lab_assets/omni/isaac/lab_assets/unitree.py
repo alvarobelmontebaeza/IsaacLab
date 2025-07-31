@@ -239,7 +239,7 @@ WIDOWGO2_CFG = ArticulationCfg(
     ),
     soft_joint_pos_limit_factor=0.95,
     actuators={
-        "base_legs": DelayedPDActuatorCfg(
+        "base_legs": ImplicitActuatorCfg(
             joint_names_expr=[".*_hip_joint", ".*_thigh_joint", ".*_calf_joint"],
             effort_limit={
                 ".*_hip_joint": 35.278,
@@ -249,26 +249,20 @@ WIDOWGO2_CFG = ArticulationCfg(
             velocity_limit=30.0,
             stiffness=40.0,
             damping=1.0,
-            friction=0.0,
-            min_delay=2,
-            max_delay=4,
         ),
-        "arm": DelayedPDActuatorCfg(
+        "arm": ImplicitActuatorCfg(
             joint_names_expr=[".*widow_waist", ".*widow_shoulder", ".*widow_elbow", ".*widow_forearm_roll", ".*widow_wrist_angle", ".*widow_wrist_rotate"],
             effort_limit={
-                ".*widow_waist": 4.0,
-                ".*widow_shoulder": 8.0,
-                ".*widow_elbow": 8.0,
-                ".*widow_forearm_roll": 4.0,
-                ".*widow_wrist_angle": 4.0,
-                ".*widow_wrist_rotate": 1.4,
+                ".*widow_waist": 10.0,
+                ".*widow_shoulder": 20.0,
+                ".*widow_elbow": 15.0,
+                ".*widow_forearm_roll": 2.0,
+                ".*widow_wrist_angle": 5.0,
+                ".*widow_wrist_rotate": 1.0,
             },
-            velocity_limit= 3.14,
-            stiffness=750.0,
-            damping=100.0,
-            friction=0.0,
-            min_delay=2,
-            max_delay=4,
+            velocity_limit=3.14,
+            stiffness=5.0,
+            damping=0.5,
         ),
     },
 )

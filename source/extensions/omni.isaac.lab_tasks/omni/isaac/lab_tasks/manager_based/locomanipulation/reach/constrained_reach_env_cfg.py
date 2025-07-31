@@ -106,7 +106,7 @@ class CommandsCfg:
         body_name=MISSING, # Virtual EE frame at the end of the robot arm
         resampling_time_range=(6.0, 8.0),
         ranges=mdp.UniformPoseWorldCommandCfg.Ranges(
-            pos_x=(-1.0, 1.0),
+            pos_x=(0.2, 1.2),
             pos_y=(-0.5, 0.5),
             pos_z=(-0.3, 0.3),
             roll=(0.0, 0.0),
@@ -271,8 +271,8 @@ class RewardsCfg:
         weight= 2.5,
         params={"command_name": "ee_pose", "radius": 0.3, "asset_cfg": SceneEntityCfg("robot", body_names=[".*ee_link"]), "sigmas": "adaptive"}
     )
-    leg_low_power = RewTerm(func=mdp.low_power, weight=0.1, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"]), "max_power": 900.0})
-    arm_low_power = RewTerm(func=mdp.low_power, weight=0.05, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 24.0})
+    leg_low_power = RewTerm(func=mdp.low_power, weight=0.6, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint", ".*thigh_joint", ".*calf_joint"]), "max_power": 900.0})
+    arm_low_power = RewTerm(func=mdp.low_power, weight=0.2, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*waist", ".*shoulder", ".*elbow", ".*forearm_roll", ".*wrist_angle", ".*wrist_rotate"]), "max_power": 40.0})
     action_rate = RewTerm(func=mdp.action_rate_regularization, weight=0.2, params={"sigma": 0.25})
     # alive = RewTerm(func=mdp.is_alive, weight=0.05)
     # -- penalties
@@ -329,32 +329,32 @@ class ConstraintsCfg:
     #     "limits": 3.1415})
     cstr_arm_joint_torque_limits_waist = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_joint_torque_limits, params={
         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*widow_waist"]), 
-        "limits": 4.0,
+        "limits": 10.0,
     })
     cstr_arm_joint_torque_limits_shoulder = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_joint_torque_limits, params={
         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*widow_shoulder"]), 
-        "limits": 8.0,
+        "limits": 20.0,
     })
     cstr_arm_joint_torque_limits_elbow = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_joint_torque_limits, params={
         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*widow_elbow"]), 
-        "limits": 8.0,
+        "limits": 15.0,
     })
     cstr_arm_joint_torque_limits_forearm_roll = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_joint_torque_limits, params={
         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*widow_forearm_roll"]), 
-        "limits": 4.0,
+        "limits": 2.0,
     })
     cstr_arm_joint_torque_limits_wrist_angle = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_joint_torque_limits, params={
         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*widow_wrist_angle"]), 
-        "limits": 4.0,
+        "limits": 5.0,
     })
     cstr_arm_joint_torque_limits_wrist_rotate = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_joint_torque_limits, params={
         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*widow_wrist_rotate"]), 
-        "limits": 1.4,
+        "limits": 1.0,
     })
     
     # -- Actions
-    cstr_leg_action_limits = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_action_limits, params={"action_name": "leg_joint_pos", "asset_cfg": SceneEntityCfg("robot")})
-    cstr_arm_action_limits = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_action_limits, params={"action_name": "arm_joint_pos", "asset_cfg": SceneEntityCfg("robot")})
+    # cstr_leg_action_limits = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_action_limits, params={"action_name": "leg_joint_pos", "asset_cfg": SceneEntityCfg("robot")})
+    # cstr_arm_action_limits = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_action_limits, params={"action_name": "arm_joint_pos", "asset_cfg": SceneEntityCfg("robot")})
     # cstr_action_rate = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_action_rate, params={"limit": 150.0})
 
     # -- HARD CONSTRAINTS
@@ -363,18 +363,18 @@ class ConstraintsCfg:
     cstr_arm_contact = CstrTerm(init_max_p=1.0, final_max_p=1.0, func=mdp.cstr_undesired_contacts,
                                 params={"threshold": 1.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*arm_links"])})
     cstr_foot_contact_force = CstrTerm(init_max_p=1.0, final_max_p=1.0, func=mdp.cstr_foot_contact_force,
-                                       params={"limit": 225.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"])})
+                                       params={"limit": 300.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"])})
     cstr_min_base_height = CstrTerm(init_max_p=1.0, final_max_p=1.0, func=mdp.cstr_min_base_height,
                                     params={"min_height": 0.15, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
     cstr_max_base_height = CstrTerm(init_max_p=1.0, final_max_p=1.0, func=mdp.cstr_max_base_height,
-                                    params={"max_height": 1.0, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
+                                    params={"max_height": 0.7, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
     cstr_upside_down = CstrTerm(init_max_p=1.0, final_max_p=1.0, func=mdp.cstr_upsidedown,
                                 params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
     
     # -- STYLE CONSTRAINTS
     cstr_body_velocity = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_max_base_velocity,
                                  params={"limit": 0.15, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
-    cstr_joint_deviation = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_joint_deviation,
+    cstr_joint_deviation = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_joint_deviation,
                                     params={"limit": 0.4, "asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint"])})
     cstr_base_orientation = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_flat_orientation,
                                      params={"limit": 0.3, "asset_cfg": SceneEntityCfg("robot", body_names=[".*base"])})
@@ -384,7 +384,7 @@ class ConstraintsCfg:
     cstr_foot_stumble = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_foot_stumble,
                                  params={"coeff": 2.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"])})
     cstr_feet_force_std = CstrTerm(init_max_p=0.05, final_max_p=0.25, func=mdp.cstr_feet_force_std,
-                                      params={"limit": 60.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"])})
+                                      params={"limit": 50.0, "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"])})
     '''
     cstr_foot_slip = CstrTerm(init_max_p=0.05, final_max_p=0.9, func=mdp.cstr_foot_slip,
                               params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*foot"]), "asset_cfg": SceneEntityCfg("robot", body_names=[".*foot"])})
@@ -396,7 +396,7 @@ class TerminationsCfg:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     base_contact = DoneTerm(
         func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*base"]), "threshold": 1.0},
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*base", ".*Head.*", ".*hip", ".*thigh", ".*calf"]), "threshold": 1.0},
     )
     # bad_orientation = DoneTerm(func=mdp.bad_orientation, params={"limit_angle": 0.5, "asset_cfg": SceneEntityCfg("robot", body_names=["base"])})
 
@@ -435,7 +435,7 @@ class CstrLocomanipulationReachRoughEnvCfg(ConstrainedManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 4
+        self.decimation = 2
         self.episode_length_s = 10.0
         # simulation settings
         self.sim.dt = 0.005
